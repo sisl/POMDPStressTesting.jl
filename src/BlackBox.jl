@@ -4,10 +4,20 @@ Provides virtual interface for the black-box system under test (SUT)
 module BlackBox
 
 export
+	initialize,
     isevent,
     miss_distance,
-    transition_prob,
-    evaluate
+    transition_model,
+    evaluate,
+    isterminal
+
+
+"""
+    initialize()
+
+Reset state to its initial state.
+"""
+function initialize end
 
 
 """
@@ -27,18 +37,27 @@ function miss_distance end
 
 
 """
-    transition_prob()::Float64
+    transition_model()::Float64
 
 Return the transition probability of the current state [0-1].
 """
-function transition_prob end
+function transition_model end
+
 
 """
-    evaluate(a::Seed)
+    evaluate(s::State, a::Seed)::Tuple(transition_probability, isevent)
 
-Evaluate the SUT given some input seed.
+Evaluate the SUT given some input seed and current state, returns `transition_probability` and `isevent` indication.
 """
 function evaluate end
+
+
+"""
+    isterminal()::Bool
+
+Return an indication that the simulation is in a terminal state.
+"""
+function isterminal end
 
 
 end # module BlackBox

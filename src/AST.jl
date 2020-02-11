@@ -18,19 +18,22 @@ Define interface to follow (AST. or POMDPStressTesting.):
     AST.actions # seeds
     AST.parameters
     AST.simulate
-    AST.initialize
     AST.initial_seed
 
 Define "black-box" interface (separate this from AST formulation):
-    BlackBox.event
+    BlackBox.initialize
+    BlackBox.isevent
     BlackBox.miss_distance
     BlackBox.transition_prob
-    BlackBox.evaluate
+    BlackBox.evaluate (or step)
 
 TODO:
     [] Specific AST struct???
+        [] POMDP/MDP formulation of AST as ::MDP{S,A}
     [] Integrate with solvers (i.e. MCTS.jl with "single" progressive widening)
     [] @impl_dep: implementation dependencies (see pomdp.jl for example)
+    [] Benchmarking/Results tools
+    [] BlackBox.evaluate vs. BlackBox.step
 =#
 
 """
@@ -62,14 +65,6 @@ function parameters end
 
 
 """
-    initialize()
-
-Perform any initialization routines before the start of each simulation.
-"""
-function initialize end
-
-
-"""
     initial_seed(a::Seed)
 
 Control the initial seed used for the RNG.
@@ -83,14 +78,6 @@ function initial_seed end
 Run AST simulation.
 """
 function simulate end
-
-
-"""
-    isterminal()::Bool
-
-Return an indication that the simulation is in a terminal state.
-"""
-function isterminal end
 
 
 end  # module AST
