@@ -117,6 +117,7 @@ function Base.hash(A::Vector{ASTAction})
 end
 
 # TODO: Understand. Rewrite.
+# TODO: Conflicts somehow with MCTS @requirements_info for isequal(...)
 function Base.hash(s::ASTState)
     h = hash(s.t_index)
     h = hash(h, hash(isnothing(s.parent) ? nothing : s.parent.hash))

@@ -11,3 +11,6 @@ using POMDPs
 using MCTS
 
 @requirements_info MCTSSolver() mdp
+
+solver = MCTSSolver(enable_tree_vis=true)
+policy = solve(solver, mdp)
