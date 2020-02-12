@@ -1,11 +1,13 @@
 module POMDPStressTesting
 
+include("AST.jl")
+# include("BlackBox.jl")
+
+import .AST
+import .AST.BlackBox
+
 export
     AST,
-    BlackBox,
-    isevent
-
-include("AST.jl")
-include("BlackBox.jl")
+    BlackBox
 
 end # module POMDPStressTesting
