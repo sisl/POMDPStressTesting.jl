@@ -5,7 +5,9 @@ using Revise # DEBUG
 include("../src/POMDPStressTesting.jl")
 using .POMDPStressTesting
 using Distributions
-
+using Random
+using POMDPs
+using MCTS
 
 ## AST formulation
 
@@ -63,15 +65,16 @@ BlackBox.miss_distance(sim::Walk1DSim) = max(sim.p.threshx - abs(sim.x), 0) # No
 
 
 # Override from BlackBox
-BlackBox.isterminal(sim::Walk1DSim) = BlackBox.isevent(sim.s) || sim.t >= sim.p.endtime
+BlackBox.isterminal(sim::Walk1DSim) = BlackBox.isevent(sim) || sim.t >= sim.p.endtime
 
 
 # Override from BlackBox
 function BlackBox.evaluate(sim::Walk1DSim)
 	sim.t += 1
-	(sample::Float64, prob::Float64) = BlackBox.transition_model(sim)
+	(prob::Float64, sample::Float64) = BlackBox.transition_model(sim)
 	sim.x += sample
 	miss_distance = BlackBox.miss_distance(sim)
+	# @show sim.x, miss_distance, prob
 	if sim.p.logging
 		push!(sim.history, sim.x)
 	end
@@ -101,5 +104,36 @@ function runtest()
 	ast_params::AST.Params = AST.Params(max_steps, rsg_length, seed)
 
 	# AST MDP formulation object
-	ast::AST.ASTMDP = AST.ASTMDP(ast_params, sim)
+	mdp::AST.ASTMDP = AST.ASTMDP(ast_params, sim)
+	# mdp.reset_rsg = AST.RandomSeedGenerator.RSG()
+
+	# @requirements_info MCTSSolver() mdp
+
+	rng = MersenneTwister(seed) # Unused. TODO remove
+
+	solver = MCTS.DPWSolver(
+			estimate_value=AST.rollout, # TODO: ?
+			depth=100,#max_steps,
+			enable_state_pw=false, # Custom fork of MCTS.jl
+			# keep_tree=false, # TODO: "clear_nodes" ?
+			exploration_constant=100.0,
+			k_action=0.5,
+			alpha_action=0.85,
+			n_iterations=100,
+			next_action=AST.next_action, # Necessary!
+			tree_in_info=true)#, rng=rng)
+
+	planner = solve(solver, mdp)
+
+	s = initialstate(mdp, rng) # rng not used
+	a = action(planner, s)
+
+	# Playback the best path in the tree
+	AST.playback(mdp) # TODO: export playback
+
+	# display(sim.history)
+
+	return (planner, mdp, sim, solver, a)
 end
+
+(planner, mdp, sim, solver, a) = runtest();
