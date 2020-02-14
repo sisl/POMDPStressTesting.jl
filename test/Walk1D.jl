@@ -2,8 +2,7 @@ using Revise # DEBUG
 
 # Based on Ritchie Lee's Walk1D in AdaptiveStressTesting.jl examples.
 
-include("../src/POMDPStressTesting.jl")
-using .POMDPStressTesting
+using POMDPStressTesting
 using Distributions
 using Random
 using POMDPs
@@ -88,7 +87,6 @@ function runtest()
 	seed = 1 # RNG seed
 	σ = 1.0 # Standard deviation
 
-
 	# Setup black-box specific simulation parameters
 	sim_params::Walk1DParams = Walk1DParams()
 	sim_params.startx = 1.0
@@ -99,7 +97,6 @@ function runtest()
 	# Create black-box simulation object
 	sim::BlackBox.Simulation = Walk1DSim(sim_params, σ)
 
-
 	# AST specific parameters
 	ast_params::AST.Params = AST.Params(max_steps, rsg_length, seed)
 
@@ -109,31 +106,32 @@ function runtest()
 
 	# @requirements_info MCTSSolver() mdp
 
-	rng = MersenneTwister(seed) # Unused. TODO remove
+	rng = MersenneTwister(seed) # Unused. TODO local vs. global seed (i.e. use this)
 
+	# MCTS with DPW solver parameters
+	# TODO: AST version of this as a wrapper (i.e. sets required parameters)
 	solver = MCTS.DPWSolver(
-			estimate_value=AST.rollout, # TODO: ?
-			depth=100,#max_steps,
+			estimate_value=AST.rollout, # TODO: required.
+			depth=max_steps,
 			enable_state_pw=false, # Custom fork of MCTS.jl
-			# keep_tree=false, # TODO: "clear_nodes" ?
 			exploration_constant=100.0,
 			k_action=0.5,
 			alpha_action=0.85,
-			n_iterations=100,
-			next_action=AST.next_action, # Necessary!
+			n_iterations=1000,
+			# next_action=AST.next_action, # Necessary!
 			tree_in_info=true)#, rng=rng)
 
 	planner = solve(solver, mdp)
 
-	s = initialstate(mdp, rng) # rng not used
-	a = action(planner, s)
+	# s = initialstate(mdp, rng) # rng not used
+	# a = action(planner, s)
 
 	# Playback the best path in the tree
-	AST.playback(mdp) # TODO: export playback
+	# AST.playback(mdp) # TODO: export playback
 
 	# display(sim.history)
 
-	return (planner, mdp, sim, solver, a)
+	return (planner, mdp, sim, solver)
 end
 
-(planner, mdp, sim, solver, a) = runtest();
+(planner, mdp, sim, solver) = runtest();
