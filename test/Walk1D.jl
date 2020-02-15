@@ -113,12 +113,13 @@ function runtest()
 	solver = MCTS.DPWSolver(
 			estimate_value=AST.rollout, # TODO: required.
 			depth=max_steps,
-			enable_state_pw=false, # Custom fork of MCTS.jl
+			enable_state_pw=false, # Custom fork of MCTS.jl (PR submitted) # TODO: best practice/required.
 			exploration_constant=100.0,
 			k_action=0.5,
 			alpha_action=0.85,
-			n_iterations=1000,
-			# next_action=AST.next_action, # Necessary!
+			n_iterations=100,
+			# next_action=AST.next_action, # Unnecessary, implemented by MCTS.jl
+			reset_callback=AST.go_to_state, # Custom fork of MCTS.jl # TODO: required.
 			tree_in_info=true)#, rng=rng)
 
 	planner = solve(solver, mdp)

@@ -31,6 +31,7 @@ export
     isterminal,
 
     playback
+    # TODO: export necessary functions
 
 #=
 Define interface to follow (AST. or POMDPStressTesting.):
@@ -59,33 +60,16 @@ TODO:
 const DEFAULT_RSG_LENGTH = 3 # Default random seed generator (RSG) length (TODO)
 
 
-"""
-    AST.Params
 
-Adaptive Stress Testing specific simulation parameters.
-"""
-@with_kw mutable struct Params
-    max_steps::Int64 = 0 # Maximum simulation time step (for runaways in simulation)
-    rsg_length::Int64 = 3 # Dictates number of unique available random seeds ((????))
-    init_seed::Int64 = 0 # Initial seed value
-    reset_seed::Union{Nothing, Int64} = nothing # Reset to this seed value on initialize()
-end
-Params(max_steps::Int64, rsg_length::Int64, init_seed::Int64) = Params(max_steps=max_steps, rsg_length=rsg_length, init_seed=init_seed)
-
-
-
-
+# TODO: Generalize so be seeds or disturbance distributions directly.
 mutable struct ASTAction
-    # TODO
     rsg::RSG
-
     ASTAction(rsg::RSG) = new(rsg)
     ASTAction(len::Int64=DEFAULT_RSG_LENGTH, seed::Int64=0) = ASTAction(RSG(len, seed))
 end
 
 
 mutable struct ASTState
-    # TODO
     t_index::Int64 # Sanity check that time corresponds
     hash::UInt64 # Hash simulation state to match with ASTState
     parent::Union{Nothing,ASTState} # Parent state, `nothing` if root
@@ -135,42 +119,28 @@ Base.isequal(w::ASTAction,v::ASTAction) = isequal(w.rsg,v.rsg)
 Base.isequal(w::ASTState,v::ASTState) = hash(w) == hash(v)
 
 
-# TODO: put in separate module
-mutable struct Tracker
-    actions::Vector{ASTAction}
-    q_values::Vector{Float64}
-    q_values_rev::Vector{Float64}
+"""
+    AST.Params
 
-    Tracker() = new(ASTAction[], Float64[], Float64[])
+Adaptive Stress Testing specific simulation parameters.
+"""
+@with_kw mutable struct Params
+    max_steps::Int64 = 0 # Maximum simulation time step (for runaways in simulation)
+    rsg_length::Int64 = 3 # Dictates number of unique available random seeds ((????))
+    init_seed::Int64 = 0 # Initial seed value
+    reset_seed::Union{Nothing, Int64} = nothing # Reset to this seed value on initialize()
+    top_k::Int64 = 0 # Number of top performing paths to save (defaults to 0, i.e. do not record)
 end
+Params(max_steps::Int64, rsg_length::Int64, init_seed::Int64, top_k::Int64) = Params(max_steps=max_steps, rsg_length=rsg_length, init_seed=init_seed, top_k=top_k)
 
-function Base.empty!(tracker::Tracker)
-    empty!(tracker.actions)
-    empty!(tracker.q_values)
-    empty!(tracker.q_values_rev)
-end
-
-Base.hash(tracker::Tracker) = hash(tracker.actions)
-Base.:(==)(t1::Tracker, t2::Tracker) = t1.actions == t2.actions
-
-push_action!(tracker::Tracker, a::ASTAction) = push!(tracker.actions, a)
-push_q_value!(tracker::Tracker, q::Float64) = push!(tracker.q_values, q)
-push_q_value_rev!(tracker::Tracker, q::Float64) = push!(tracker.q_values_rev, q)
-append_actions!(tracker::Tracker, a::Vector) = append!(tracker.actions, a)
-append_q_values!(tracker::Tracker, q::Vector) = append!(tracker.q_values, q)
-
-function combine_q_values!(tracker::Tracker)
-    if !isempty(tracker.q_values_rev)
-        append!(tracker.q_values, reverse(tracker.q_values_rev))
-        empty!(tracker.q_values_rev)
-    end
-end
-
-get_actions(tracker::Tracker) = tracker.actions
-get_q_values(tracker::Tracker) = tracker.q_values
 
 
 # TODO: Naming
+"""
+    AST.ASTMDP
+
+Adaptive Stress Testing MDP simulation object.
+"""
 mutable struct ASTMDP <: MDP{ASTState, ASTAction}
     # TODO
     params::Params # AST simulation parameters
@@ -183,8 +153,8 @@ mutable struct ASTMDP <: MDP{ASTState, ASTAction}
     reset_rsg::Union{Nothing,RSG} # Reset to this RSG if provided
 
     # TODO: {Tracker, Float64}...
-    top_paths::PriorityQueue{Any, Float64} # Collection of best paths in the tree # TODO: MCTS specific.
-    tracker::Tracker
+    top_paths::PriorityQueue{Any, Float64} # Collection of best paths in the tree # TODO: Change 'Any'
+    tracker::Tracker # TODO: Remove
 
     function ASTMDP(params::Params, sim)
         rsg::RSG = RSG(params.rsg_length, params.init_seed)
@@ -231,14 +201,19 @@ function POMDPs.reward(mdp::ASTMDP, prob::Float64, isevent::Bool, isterminal::Bo
     r = log(prob)
     if isevent
         r += 0.0
-    elseif isterminal # Incur miss distance cost only if !isevent && isterminal
+    elseif isterminal
+        # Add miss distance cost only if !isevent && isterminal
         r += -miss_distance
     end
     return r
 end
 
 
+
 # TODO: Handle `rng` (UNUSED)
+"""
+Initialize AST MDP state. Overridden from `POMDPs.initialstate` interface.
+"""
 function POMDPs.initialstate(mdp::ASTMDP, rng::AbstractRNG=Random.GLOBAL_RNG)
     mdp.t_index = 1
     BlackBox.initialize(mdp.sim)
@@ -254,8 +229,12 @@ function POMDPs.initialstate(mdp::ASTMDP, rng::AbstractRNG=Random.GLOBAL_RNG)
 end
 
 
+
 # TODO: Handle `rng`
 # Generate next state for AST
+"""
+Generate next state and reward for AST MDP. Overridden from `POMDPs.gen` interface.
+"""
 function POMDPs.gen(mdp::ASTMDP, s::ASTState, a::ASTAction, rng::AbstractRNG)
     @assert mdp.sim_hash == s.hash
     mdp.t_index += 1
@@ -274,222 +253,99 @@ function POMDPs.gen(mdp::ASTMDP, s::ASTState, a::ASTAction, rng::AbstractRNG)
 end
 
 
-# TODO: go_to_state.... ?
-
-
+"""
+Determine if AST MDP is in a terminal state. Overridden from `POMDPs.isterminal` interface.
+"""
 function POMDPs.isterminal(mdp::ASTMDP, s::ASTState)
-    # @assert mdp.sim_hash == s.hash
-    if mdp.sim_hash != s.hash
-        # @show mdp
-        # @show s
-        # TODO IMPORTANT: @warn "isterminal FIX" #ffff11
-        # TODO IMPORTANT: @warn "isterminal FIX" #ffff22
-        # TODO IMPORTANT: @warn "isterminal FIX" #ffff33
-        # TODO IMPORTANT: @warn "isterminal FIX" #ffff44
-        # TODO IMPORTANT: @warn "isterminal FIX" #ffff55
-        # TODO IMPORTANT: @warn "isterminal FIX" #ffff66
-        # TODO IMPORTANT: @warn "isterminal FIX" #ffff77
-        # TODO IMPORTANT: @warn "isterminal FIX" #ffff88
-        # TODO IMPORTANT: @warn "isterminal FIX" #ffff99
-        # TODO IMPORTANT: @warn "isterminal FIX" #ff1110
-        # TODO IMPORTANT: @warn "isterminal FIX" #ff2211
-        # TODO IMPORTANT: @warn "isterminal FIX" #ff3312
-        # TODO IMPORTANT: @warn "isterminal FIX" #ff4413
-        # TODO IMPORTANT: @warn "isterminal FIX" #ff5514
-        # TODO IMPORTANT: @warn "isterminal FIX" #ff6615
-        # TODO IMPORTANT: @warn "isterminal FIX" #ff7716
-        # TODO IMPORTANT: @warn "isterminal FIX" #ff8817
-        # TODO IMPORTANT: @warn "isterminal FIX" #ff9918
-        # TODO IMPORTANT: @warn "isterminal FIX" #f10019
-        # TODO IMPORTANT: @warn "isterminal FIX" #f11120
-        # TODO IMPORTANT: @warn "isterminal FIX" #f12221
-        # TODO IMPORTANT: @warn "isterminal FIX" #f13322
-        # TODO IMPORTANT: @warn "isterminal FIX" #f14423
-        # TODO IMPORTANT: @warn "isterminal FIX" #f15524
-        # TODO IMPORTANT: @warn "isterminal FIX" #f16625
-        # TODO IMPORTANT: @warn "isterminal FIX" #f17726
-        # TODO IMPORTANT: @warn "isterminal FIX" #ffff11
-        # TODO IMPORTANT: @warn "isterminal FIX" #ffff22
-        # TODO IMPORTANT: @warn "isterminal FIX" #ffff33
-        # TODO IMPORTANT: @warn "isterminal FIX" #ffff44
-        # TODO IMPORTANT: @warn "isterminal FIX" #ffff55
-        # TODO IMPORTANT: @warn "isterminal FIX" #ffff66
-        # TODO IMPORTANT: @warn "isterminal FIX" #ffff77
-        # TODO IMPORTANT: @warn "isterminal FIX" #ffff88
-        # TODO IMPORTANT: @warn "isterminal FIX" #ffff99
-        # TODO IMPORTANT: @warn "isterminal FIX" #ff1110
-        # TODO IMPORTANT: @warn "isterminal FIX" #ff2211
-        # TODO IMPORTANT: @warn "isterminal FIX" #ff3312
-        # TODO IMPORTANT: @warn "isterminal FIX" #ff4413
-        # TODO IMPORTANT: @warn "isterminal FIX" #ff5514
-        # TODO IMPORTANT: @warn "isterminal FIX" #ff6615
-        # TODO IMPORTANT: @warn "isterminal FIX" #ff7716
-        # TODO IMPORTANT: @warn "isterminal FIX" #ff8817
-        # TODO IMPORTANT: @warn "isterminal FIX" #ff9918
-        # TODO IMPORTANT: @warn "isterminal FIX" #f10019
-        # TODO IMPORTANT: @warn "isterminal FIX" #f11120
-        # TODO IMPORTANT: @warn "isterminal FIX" #f12221
-        # TODO IMPORTANT: @warn "isterminal FIX" #f13322
-        # TODO IMPORTANT: @warn "isterminal FIX" #f14423
-        # TODO IMPORTANT: @warn "isterminal FIX" #f15524
-        # TODO IMPORTANT: @warn "isterminal FIX" #f16625
-        # TODO IMPORTANT: @warn "isterminal FIX" #f17726
-    end
-    if mdp.sim_hash != s.hash
-        go_to_state(mdp, s) # TODO: fix! Where should this happen? in action_info/select_action
-    end
+    @assert mdp.sim_hash == s.hash
     return BlackBox.isterminal(mdp.sim)
 end
 
 
-POMDPs.discount(mdp::ASTMDP) = 1.0 # Undiscounted
+"""
+AST problems are undiscounted to treat future reward equally AST MDP state. Overridden from `POMDPs.discount` interface.
+"""
+POMDPs.discount(mdp::ASTMDP) = 1.0
 
 
-# TODO: POMDPs.action # i.e. random_action
-# This called by the rollout!
-function POMDPs.action(policy::RandomPolicy, s::ASTState)
-    mdp = policy.problem
-    rsg::RSG = mdp.rsg
-    next!(rsg)
-    return ASTAction(deepcopy(rsg))
-end
-
-# TODO: blend with POMDPs.action
-random_action(mdp::ASTMDP, ::ASTState, dpw) = random_action(mdp)
+"""
+Randomly select next action, independent of the state.
+"""
 function random_action(mdp::ASTMDP)
     rsg::RSG = mdp.rsg
     next!(rsg)
     return ASTAction(deepcopy(rsg))
 end
+random_action(mdp::ASTMDP, ::ASTState) = random_action(mdp)
+
+"""
+Randomly select next action, independent of the state. Overridden from `POMDPs.action` interface.
+"""
+POMDPs.action(policy::RandomPolicy, s::ASTState) = random_action(policy.problem)
+POMDPs.actions(mdp::ASTMDP) = [random_action(mdp)] # TODO: Should this be handled better?
 
 
-function POMDPs.actions(mdp::ASTMDP)
-    # actions = ASTAction[]
-    # k = 10 # TODO: Not what 'k' is for.
-    # for i in 1:k
-    #     rsg::RSG = mdp.rsg
-    #     next!(rsg)
-    #     push!(actions, ASTAction(deepcopy(rsg)))
-    # end
-    # return actions::Vector{ASTAction}
-    # return [ASTAction(mdp.rsg)]
-    # TODO: Make bigger?
-    # return [random_action(mdp) for k in 1:10]
-    return [random_action(mdp)]
-end
 
-
+"""
+Reset AST simulation to a given state; used by the MCTS DPWSolver as the `reset_callback` function.
+"""
 function go_to_state(mdp::ASTMDP, target_state::ASTState)
     s = initialstate(mdp, Random.GLOBAL_RNG)
     BlackBox.initialize(mdp.sim)
-    actions = get_action_sequence(target_state)
+    actions = get_action_sequence(target_state) # TODO: duplicate of action_trace
     R = 0.0
     for a in actions
         s, r = gen(mdp, s, a, Random.GLOBAL_RNG)
         R += r
     end
     @assert s == target_state
+
+    record_trace(mdp, actions, R)
+
     return (R, actions)
 end
 
-global DDD = true # TODO: Remove
-
-function rollout(mdp::ASTMDP, s::ASTState, d::Int64)
-    if d == 0 || isterminal(mdp, s)
-        global DDD
-        if DDD
-            @show s
-            DDD = false
-        end
-
-        # TODO: encapsulate this.
-        # Save top k paths from rollout
-
-        # TODO: Put this into one call (save loops)
-        ancestor_actions = action_trace(s)
-        q_value = q_trace(s)
-
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #10ff11
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #10ff22
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #10ff33
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #10ff44
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #10ff55
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #10ff66
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #10ff77
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #10ff88
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #10ff99
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #101110
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #102211
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #103312
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #104413
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #105514
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #106615
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #107716
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #108817
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #109918
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #100019
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #101120
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #102221
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #103322
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #104423
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #105524
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #106625
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #107726
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #10ff11
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #10ff22
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #10ff33
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #10ff44
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #10ff55
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #10ff66
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #10ff77
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #10ff88
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #10ff99
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #101110
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #102211
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #103312
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #104413
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #105514
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #106615
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #107716
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #108817
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #109918
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #100019
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #101120
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #102221
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #103322
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #104423
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #105524
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #106625
-        # TODO IMPORTANT: Record q_values from non-rollout (i.e. from MCTS) #107726
 
 
-        top_k = 20
-        if !haskey(mdp.top_paths, s.hash)
-            enqueue!(mdp.top_paths, ancestor_actions, q_value)
-            while length(mdp.top_paths) > top_k
+"""
+Record paths from leaf node that lead to an event.
+"""
+function record_trace(mdp::ASTMDP, actions::Vector{ASTAction}, summed_q_values::Float64)
+    if mdp.params.top_k > 0 && BlackBox.isevent(mdp.sim)
+        if !haskey(mdp.top_paths, actions)
+            enqueue!(mdp.top_paths, actions, summed_q_values)
+            while length(mdp.top_paths) > mdp.params.top_k
                 dequeue!(mdp.top_paths)
             end
         end
+    end
+end
 
-        # go_to_state(mdp, s)
 
+
+"""
+Rollout simulation for MCTS; used by the MCTS DPWSolver as the `estimate_value` function.
+Custom rollout records action trace once the depth has been reached.
+"""
+function rollout(mdp::ASTMDP, s::ASTState, d::Int64)
+    if d == 0 || isterminal(mdp, s)
+        # TODO Efficiency: To make this more efficient, collect trace as rollout is called (instead of tracing back up the tree)
+        # TODO Efficiency: Call record_trace directly with the `action_trace` and `q_trace` outputs.
+        go_to_state(mdp, s) # Records trace through this call
         return 0.0
     else
         a::ASTAction = random_action(mdp) # TODO: Use "POMDPs.action", requires MCTS planner
 
-        # push_action!(mdp.tracker, a) # TODO: Remove
-
         (sp, r) = gen(DDNOut(:sp, :r), mdp, s, a, Random.GLOBAL_RNG)
         q_value = r + discount(mdp)*rollout(mdp, sp, d-1)
 
-        # sp.q_value = q_value
-        # push_q_value_rev!(mdp.tracker, q_value) # TODO: Remove
         return q_value
     end
 end
 
 
 
+# Duplicate of action_trace. # TODO
 function get_action_sequence(s::ASTState)
     actions::Vector{ASTAction} = ASTAction[]
 
@@ -500,86 +356,6 @@ function get_action_sequence(s::ASTState)
     end
 
     return actions::Vector{ASTAction}
-end
-
-
-
-
-function trace!(s_current::ASTState, snode)
-    q_values = Float64[]
-    # if !haskey()  # TODO
-    s = s_current
-    while !isnothing(s.parent)
-        q = snode.tree.q[snode.tree.s_lookup[s.parent]]
-        push!(q_values, q)
-        s = s.parent
-    end
-    return reverse(q_values)
-end
-
-
-# i.e. selectAction, actionSelection (find best)
-# function next_action(mdp::ASTMDP, s::ASTState, snode)
-function select_action(mdp::ASTMDP, s::ASTState, snode) # analogous to "action_info"
-    n = 100 # TODO: Parameterize
-    top_k = 10 # TODO: Parameterize
-    simulator = RolloutSimulator(max_steps=mdp.params.max_steps)
-    policy = RandomPolicy(mdp) # uses the POMDPs.actions function
-    R = 0.0
-    for i in 1:n
-        (R, actions) = go_to_state(mdp, s)
-
-        # TODO: tracker?
-        # @show actions, R
-        # empty!(mdp.tracker)
-        # append_actions!(mdp.tracker, actions)
-        # q_values = trace!(s, snode)
-        # append_q_values!(mdp.tracker, q_values)
-
-        # R += simulate(simulator, mdp, policy)
-        # TODO: HistoryRecorder??
-
-        # This calls MCTS.simulate!
-
-        hr = HistoryRecorder()
-        history = simulate(hr, mdp, policy)
-        # @show history
-        R = sum(map(h->h[:r], history))
-
-        # TODO: queue! tracker
-        # TODO: deepcopy parameters
-        # TODO: Abstract this to separate module
-
-        # combine_q_values!(mdp.tracker)
-
-        # if !haskey(mdp.top_paths, mdp.tracker) # TODO: haskey # error
-        actions = map(h->h[:a], history)
-        # if !haskey(mdp.top_paths, history)
-        if !haskey(mdp.top_paths, actions)
-            # enqueue!(mdp.top_paths, deepcopy(mdp.tracker), R)
-            enqueue!(mdp.top_paths, actions, R)
-            # enqueue!(mdp.top_paths, history, R)
-            while length(mdp.top_paths) > top_k
-                dequeue!(mdp.top_paths)
-            end
-        end
-
-        # TODO: cpu timing cut-off
-    end
-
-    # TODO: track actions and q_values internal to MCTS ?
-
-    # Return simulation to current state
-    go_to_state(mdp, s)
-
-    # Extract actions taken at current state
-    display(snode)
-    # q = snode.tree.q[snode.tree.s_lookup[s.parent]]
-
-    # a = action(planner, s) # TODO: Might cause StackOverflow...
-
-    return random_action(mdp)
-    # return a # TODO: return best action
 end
 
 
@@ -603,7 +379,7 @@ end
 """
 Return optimal action path from MCTS tree (using `info[:tree]` from `(, info) = action_info(...)`).
 """
-function get_optimal_path(mdp, tree, snode::Int, actions::Vector)
+function get_optimal_path(mdp, tree, snode::Int, actions::Vector; verbose::Bool=false)
     best_Q = -Inf
     sanode = 0
     for child in tree.children[snode]
@@ -613,10 +389,14 @@ function get_optimal_path(mdp, tree, snode::Int, actions::Vector)
         end
     end
 
-    print("State = 0x", string(tree.s_labels[snode].hash, base=16), "\t:\t")
+    if verbose
+        print("State = 0x", string(tree.s_labels[snode].hash, base=16), "\t:\t")
+    end
     if sanode != 0
-        print("Q = ", tree.q[sanode], "\t:\t")
-        println("Action = ", tree.a_labels[sanode].rsg.state)
+        if verbose
+            print("Q = ", tree.q[sanode], "\t:\t")
+            println("Action = ", tree.a_labels[sanode].rsg.state)
+        end
         push!(actions, tree.a_labels[sanode])
 
         # Find subsequent maximizing state node
@@ -630,27 +410,29 @@ function get_optimal_path(mdp, tree, snode::Int, actions::Vector)
         end
 
         if snode2 != 0
-            get_optimal_path(mdp, tree, snode2, actions)
+            get_optimal_path(mdp, tree, snode2, actions, verbose=verbose)
         end
     else
-        AST.go_to_state(mdp, tree.s_labels[snode])
-        if BlackBox.isevent(mdp.sim)
-            println("Event.")
-        else
-            println("End of tree.")
+        go_to_state(mdp, tree.s_labels[snode])
+        if verbose
+            if BlackBox.isevent(mdp.sim)
+                println("Event.")
+            else
+                println("End of tree.")
+            end
         end
     end
 
     return actions
 end
-get_optimal_path(mdp, tree, state, actions=[]) = get_optimal_path(mdp, tree, tree.s_lookup[state], actions)
+get_optimal_path(mdp, tree, state, actions=[]; kwargs...) = get_optimal_path(mdp, tree, tree.s_lookup[state], actions; kwargs...)
 
 
 
-function playback(mdp::ASTMDP, actions)
-    # k = collect(keys(mdp.top_paths)) # Used for history... TODO: remove
-    # actions = k[end]
-
+"""
+Play back a given action trace from the `initialstate` of the MDP.
+"""
+function playback(mdp::ASTMDP, actions::Vector{ASTAction}; verbose=true)
     rng = Random.GLOBAL_RNG # Not used.
     s = initialstate(mdp, rng)
     BlackBox.initialize(mdp.sim)
@@ -658,16 +440,19 @@ function playback(mdp::ASTMDP, actions)
     for a in actions
         (sp, r) = gen(mdp, s, a, rng)
         s = sp
-        @show mdp.sim.x
+        # TODO: This is Walk1D specific!
+        if verbose
+            @show mdp.sim.x
+        end
     end
 end
+
 
 
 """
 Follow MCTS optimal path online calling `action` after each selected state.
 """
-function online_path(mdp::MDP, planner::Policy)
-    # Follow MCTS policy online.
+function online_path(mdp::MDP, planner::Policy; verbose::Bool=false)
     s = initialstate(mdp, Random.GLOBAL_RNG)
     a = action(planner, s)
     BlackBox.initialize(mdp.sim)
@@ -675,7 +460,10 @@ function online_path(mdp::MDP, planner::Policy)
     actions = ASTAction[a]
 
     while true
-        println("Sim. state: ", mdp.sim.x, " -> ", "Action: ", a.rsg.state)
+        if verbose
+            # TODO: This is Walk1D specific!
+            println("Sim. state: ", mdp.sim.x, " -> ", "Action: ", a.rsg.state)
+        end
 
         if BlackBox.isterminal(mdp.sim)
             break
@@ -706,6 +494,7 @@ function state_trace(s::ASTState)
 end
 
 
+
 """
 Trace up the tree to get all ancestor actions.
 """
@@ -717,6 +506,8 @@ function action_trace(s::ASTState)
     end
     return actions
 end
+
+
 
 """
 Trace up the tree and accumulate Q-values.
