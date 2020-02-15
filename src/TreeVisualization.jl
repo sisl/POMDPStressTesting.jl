@@ -1,11 +1,14 @@
 module TreeVisualization
 
-export visualize
+export visualize, full_width_notebook
 
 using POMDPStressTesting
 using POMDPPolicies
 using MCTS
 using D3Trees
+
+ # Full width cells in Jupyter notebook
+full_width_notebook() = display(HTML("<style>.container { width:100% !important; }</style>"))
 
 # Display of action nodes.
 function MCTS.node_tag(s::AST.ASTState)
