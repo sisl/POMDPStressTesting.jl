@@ -98,7 +98,8 @@ function runtest()
 	sim::BlackBox.Simulation = Walk1DSim(sim_params, σ)
 
 	# AST specific parameters
-	ast_params::AST.Params = AST.Params(max_steps, rsg_length, seed)
+	top_k::Int = 10 # Save top performing paths
+	ast_params::AST.Params = AST.Params(max_steps, rsg_length, seed, top_k)
 
 	# AST MDP formulation object
 	mdp::AST.ASTMDP = AST.ASTMDP(ast_params, sim)
@@ -114,10 +115,10 @@ function runtest()
 			estimate_value=AST.rollout, # TODO: required.
 			depth=max_steps,
 			enable_state_pw=false, # Custom fork of MCTS.jl (PR submitted) # TODO: best practice/required.
-			exploration_constant=100.0,
-			k_action=0.5,
+			exploration_constant=10.0,
+			k_action=0.1,
 			alpha_action=0.85,
-			n_iterations=100,
+			n_iterations=1000,
 			# next_action=AST.next_action, # Unnecessary, implemented by MCTS.jl
 			reset_callback=AST.go_to_state, # Custom fork of MCTS.jl # TODO: required.
 			tree_in_info=true)#, rng=rng)

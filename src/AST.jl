@@ -49,9 +49,9 @@ Define "black-box" interface (separate this from AST formulation):
     BlackBox.evaluate (or: step, update)
 
 TODO:
-    [] Specific AST struct???
-        [] POMDP/MDP formulation of AST as ::MDP{S,A}
-    [] Integrate with solvers (i.e. MCTS.jl with "single" progressive widening)
+    [✓] Specific AST struct???
+        [✓] POMDP/MDP formulation of AST as ::MDP{S,A}
+    [✓] Integrate with solvers (i.e. MCTS.jl with "single" progressive widening)
     [] @impl_dep: implementation dependencies (see pomdp.jl for example)
     [] Benchmarking/Results tools
     [] BlackBox.evaluate vs. BlackBox.step
@@ -75,11 +75,12 @@ mutable struct ASTState
     parent::Union{Nothing,ASTState} # Parent state, `nothing` if root
     action::ASTAction # Action taken from parent, 0 if root
     q_value::Float64 # Saved Q-value
+    terminal::Bool
 end
 
 # TODO: Put into ASTState struct contructor
 function ASTState(t_index::Int64, parent::Union{Nothing,ASTState}, action::ASTAction)
-    s = ASTState(t_index, UInt64(0), parent, action, 0.0)
+    s = ASTState(t_index, UInt64(0), parent, action, 0.0, false)
     s.hash = hash(s)
     return s
 end
@@ -131,6 +132,7 @@ Adaptive Stress Testing specific simulation parameters.
     reset_seed::Union{Nothing, Int64} = nothing # Reset to this seed value on initialize()
     top_k::Int64 = 0 # Number of top performing paths to save (defaults to 0, i.e. do not record)
 end
+Params(max_steps::Int64, rsg_length::Int64, init_seed::Int64) = Params(max_steps=max_steps, rsg_length=rsg_length, init_seed=init_seed)
 Params(max_steps::Int64, rsg_length::Int64, init_seed::Int64, top_k::Int64) = Params(max_steps=max_steps, rsg_length=rsg_length, init_seed=init_seed, top_k=top_k)
 
 
@@ -142,7 +144,6 @@ Params(max_steps::Int64, rsg_length::Int64, init_seed::Int64, top_k::Int64) = Pa
 Adaptive Stress Testing MDP simulation object.
 """
 mutable struct ASTMDP <: MDP{ASTState, ASTAction}
-    # TODO
     params::Params # AST simulation parameters
     sim::BlackBox.Simulation # Black-box simulation struct
     sim_hash::UInt64 # Hash to keep simulations in sync
@@ -154,37 +155,13 @@ mutable struct ASTMDP <: MDP{ASTState, ASTAction}
 
     # TODO: {Tracker, Float64}...
     top_paths::PriorityQueue{Any, Float64} # Collection of best paths in the tree # TODO: Change 'Any'
-    tracker::Tracker # TODO: Remove
 
     function ASTMDP(params::Params, sim)
         rsg::RSG = RSG(params.rsg_length, params.init_seed)
         top_paths = PriorityQueue{Any, Float64}(Base.Order.Forward)
-        tracker = Tracker()
-        return new(params, sim, hash(0), 1, rsg, deepcopy(rsg), !isnothing(params.reset_seed) ? RSG(params.rsg_length, params.reset_seed) : nothing, top_paths, tracker)
+        return new(params, sim, hash(0), 1, rsg, deepcopy(rsg), !isnothing(params.reset_seed) ? RSG(params.rsg_length, params.reset_seed) : nothing, top_paths)
     end
 end
-
-
-
-#=
-"""
-    AST.Simulation
-
-Adaptive Stress Testing simulation object.
-"""
-@with_kw mutable struct Simulation
-    params::Params # AST simulation parameters
-    sim::BlackBox.Simulation # Black-box simulation struct
-    sim_hash::UInt64 # Hash to keep simulations in sync
-
-    # Function defined by BlackBox virtual interface.
-    # get_reward # TODO
-
-    t_index::Int64 # Starts at 1 and counts up (???)
-    rsg # ::RSG # TODO
-end
-=#
-
 
 
 
@@ -246,7 +223,8 @@ function POMDPs.gen(mdp::ASTMDP, s::ASTState, a::ASTAction, rng::AbstractRNG)
     # Update state
     sp = ASTState(mdp.t_index, s, a)
     mdp.sim_hash = sp.hash
-    r::Float64 = reward(mdp, prob, isevent, BlackBox.isterminal(mdp.sim), miss_distance)
+    sp.terminal = BlackBox.isterminal(mdp.sim)
+    r::Float64 = reward(mdp, prob, isevent, sp.terminal, miss_distance)
     sp.q_value = r
 
     return (sp=sp, r=r)
@@ -379,7 +357,7 @@ end
 """
 Return optimal action path from MCTS tree (using `info[:tree]` from `(, info) = action_info(...)`).
 """
-function get_optimal_path(mdp, tree, snode::Int, actions::Vector; verbose::Bool=false)
+function get_optimal_path(mdp, tree, snode::Int, actions::Vector{ASTAction}; verbose::Bool=false)
     best_Q = -Inf
     sanode = 0
     for child in tree.children[snode]
@@ -423,9 +401,9 @@ function get_optimal_path(mdp, tree, snode::Int, actions::Vector; verbose::Bool=
         end
     end
 
-    return actions
+    return actions::Vector{ASTAction}
 end
-get_optimal_path(mdp, tree, state, actions=[]; kwargs...) = get_optimal_path(mdp, tree, tree.s_lookup[state], actions; kwargs...)
+get_optimal_path(mdp, tree, state, actions::Vector{ASTAction}=ASTAction[]; kwargs...) = get_optimal_path(mdp, tree, tree.s_lookup[state], actions; kwargs...)
 
 
 
@@ -436,6 +414,7 @@ function playback(mdp::ASTMDP, actions::Vector{ASTAction}; verbose=true)
     rng = Random.GLOBAL_RNG # Not used.
     s = initialstate(mdp, rng)
     BlackBox.initialize(mdp.sim)
+    # TODO: This is Walk1D specific!
     @show mdp.sim.x
     for a in actions
         (sp, r) = gen(mdp, s, a, rng)
@@ -445,6 +424,7 @@ function playback(mdp::ASTMDP, actions::Vector{ASTAction}; verbose=true)
             @show mdp.sim.x
         end
     end
+    return s::ASTState # Returns final state
 end
 
 
@@ -454,26 +434,22 @@ Follow MCTS optimal path online calling `action` after each selected state.
 """
 function online_path(mdp::MDP, planner::Policy; verbose::Bool=false)
     s = initialstate(mdp, Random.GLOBAL_RNG)
-    a = action(planner, s)
     BlackBox.initialize(mdp.sim)
 
+    # TODO: This is Walk1D specific (mdp.sim.x)!
+    printstep(mdp, a) = verbose ? println("Sim. state: ", mdp.sim.x, " -> ", "Action: ", a.rsg.state) : nothing
+
+    # First step
+    a = action(planner, s)
     actions = ASTAction[a]
+    printstep(mdp, a)
+    (s, r) = gen(mdp, s, a, Random.GLOBAL_RNG)
 
-    while true
-        if verbose
-            # TODO: This is Walk1D specific!
-            println("Sim. state: ", mdp.sim.x, " -> ", "Action: ", a.rsg.state)
-        end
-
-        if BlackBox.isterminal(mdp.sim)
-            break
-        else
-            a = action(planner, s)
-            push!(actions, a)
-            go_to_state(mdp, s)
-            (sp, r) = gen(mdp, s, a, Random.GLOBAL_RNG)
-            s = sp
-        end
+    while !BlackBox.isterminal(mdp.sim)
+        a = action(planner, s)
+        push!(actions, a)
+        (s, r) = gen(mdp, s, a, Random.GLOBAL_RNG)
+        printstep(mdp, a)
     end
 
     return actions
