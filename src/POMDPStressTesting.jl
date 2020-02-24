@@ -10,6 +10,9 @@ import .AST.BlackBox
 
 export
     AST,
+    ASTMDP,
+    ASTState,
+    ASTAction,
     BlackBox
 
 end # module POMDPStressTesting
