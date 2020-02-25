@@ -410,18 +410,18 @@ get_optimal_path(mdp, tree, state, actions::Vector{ASTAction}=ASTAction[]; kwarg
 """
 Play back a given action trace from the `initialstate` of the MDP.
 """
-function playback(mdp::ASTMDP, actions::Vector{ASTAction}; verbose=true)
+function playback(mdp::ASTMDP, actions::Vector{ASTAction}, func=sim->sim.x; verbose=true)
     rng = Random.GLOBAL_RNG # Not used.
     s = initialstate(mdp, rng)
     BlackBox.initialize(mdp.sim)
     # TODO: This is Walk1D specific!
-    @show mdp.sim.x
+    @show func(mdp.sim)
     for a in actions
         (sp, r) = gen(mdp, s, a, rng)
         s = sp
         # TODO: This is Walk1D specific!
         if verbose
-            @show mdp.sim.x
+            @show func(mdp.sim)
         end
     end
     return s::ASTState # Returns final state
