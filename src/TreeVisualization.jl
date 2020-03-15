@@ -39,7 +39,7 @@ function visualize(mdp::AST.ASTMDP, planner::DPWPlanner)
 	(action::AST.ASTAction, info) = action_info(planner, state, tree_in_info=true)
 	d3::D3Tree = D3Tree(info[:tree], init_expand=1)
 
-	action_path::Vector{AST.ASTAction} = AST.get_optimal_path(mdp, info[:tree], AST.initialstate(mdp), verbose=true)
+	action_path::Vector{AST.ASTAction} = AST.get_optimal_path(mdp, info[:tree], AST.initialstate(mdp), verbose=false)
 
 	return d3::D3Tree
 end

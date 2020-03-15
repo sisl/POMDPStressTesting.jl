@@ -131,9 +131,10 @@ Adaptive Stress Testing specific simulation parameters.
     init_seed::Int64 = 0 # Initial seed value
     reset_seed::Union{Nothing, Int64} = nothing # Reset to this seed value on initialize()
     top_k::Int64 = 0 # Number of top performing paths to save (defaults to 0, i.e. do not record)
+    distance_reward::Bool = false # When enabled, use the -miss_distance when either an event or terminal state is reached
 end
 Params(max_steps::Int64, rsg_length::Int64, init_seed::Int64) = Params(max_steps=max_steps, rsg_length=rsg_length, init_seed=init_seed)
-Params(max_steps::Int64, rsg_length::Int64, init_seed::Int64, top_k::Int64) = Params(max_steps=max_steps, rsg_length=rsg_length, init_seed=init_seed, top_k=top_k)
+Params(max_steps::Int64, rsg_length::Int64, init_seed::Int64, top_k::Int64, distance_reward::Bool) = Params(max_steps=max_steps, rsg_length=rsg_length, init_seed=init_seed, top_k=top_k, distance_reward=distance_reward)
 
 
 
@@ -176,11 +177,18 @@ Reward function for the AST formulation. Defaults to:
 """
 function POMDPs.reward(mdp::ASTMDP, prob::Float64, isevent::Bool, isterminal::Bool, miss_distance::Float64)
     r = log(prob)
-    if isevent
-        r += 0.0
-    elseif isterminal
-        # Add miss distance cost only if !isevent && isterminal
-        r += -miss_distance
+    if mdp.params.distance_reward
+        # Alternate reward: use miss_distance at isevent to drive towards severity!
+        if isevent || isterminal
+            r += -miss_distance
+        end
+    else
+        if isevent
+            r += 0.0
+        elseif isterminal
+            # Add miss distance cost only if !isevent && isterminal
+            r += -miss_distance
+        end
     end
     return r
 end
