@@ -13,6 +13,7 @@ using DataStructures
 using POMDPPolicies
 using POMDPSimulators
 using POMDPs
+using MCTS
 
 export
     BlackBox,
@@ -132,9 +133,24 @@ Adaptive Stress Testing specific simulation parameters.
     reset_seed::Union{Nothing, Int64} = nothing # Reset to this seed value on initialize()
     top_k::Int64 = 0 # Number of top performing paths to save (defaults to 0, i.e. do not record)
     distance_reward::Bool = false # When enabled, use the -miss_distance when either an event or terminal state is reached
+    debug::Bool = false # Flag to indicate debugging mode (i.e. metrics collection, etc)
 end
 Params(max_steps::Int64, rsg_length::Int64, init_seed::Int64) = Params(max_steps=max_steps, rsg_length=rsg_length, init_seed=init_seed)
-Params(max_steps::Int64, rsg_length::Int64, init_seed::Int64, top_k::Int64, distance_reward::Bool) = Params(max_steps=max_steps, rsg_length=rsg_length, init_seed=init_seed, top_k=top_k, distance_reward=distance_reward)
+Params(max_steps::Int64, rsg_length::Int64, init_seed::Int64, top_k::Int64, distance_reward::Bool, debug::Bool) = Params(max_steps=max_steps, rsg_length=rsg_length, init_seed=init_seed, top_k=top_k, distance_reward=distance_reward, debug=debug)
+
+
+
+"""
+    AST.ASTMetrics
+
+Debugging metrics.
+"""
+@with_kw mutable struct ASTMetrics
+    miss_distance = Any[]
+    log_prob = Any[]
+    prob = Any[]
+    reward = Any[]
+end
 
 
 
@@ -145,6 +161,7 @@ Params(max_steps::Int64, rsg_length::Int64, init_seed::Int64, top_k::Int64, dist
 Adaptive Stress Testing MDP simulation object.
 """
 mutable struct ASTMDP <: MDP{ASTState, ASTAction}
+    sequential::Bool # sequential decision making process or single/buffer-shot
     params::Params # AST simulation parameters
     sim::BlackBox.Simulation # Black-box simulation struct
     sim_hash::UInt64 # Hash to keep simulations in sync
@@ -157,13 +174,28 @@ mutable struct ASTMDP <: MDP{ASTState, ASTAction}
     # TODO: {Tracker, Float64}...
     top_paths::PriorityQueue{Any, Float64} # Collection of best paths in the tree # TODO: Change 'Any'
 
+    metrics::ASTMetrics # Debugging metrics
+
     function ASTMDP(params::Params, sim)
         rsg::RSG = RSG(params.rsg_length, params.init_seed)
         top_paths = PriorityQueue{Any, Float64}(Base.Order.Forward)
-        return new(params, sim, hash(0), 1, rsg, deepcopy(rsg), !isnothing(params.reset_seed) ? RSG(params.rsg_length, params.reset_seed) : nothing, top_paths)
+        return new(true, params, sim, hash(0), 1, rsg, deepcopy(rsg), !isnothing(params.reset_seed) ? RSG(params.rsg_length, params.reset_seed) : nothing, top_paths, ASTMetrics())
     end
 end
 
+
+# TODO: clear/push!
+# TODO: put in separate file as Metrics Monitor?
+"""
+    AST.record(::ASTMDP, sym::Symbol, val)
+
+Recard an ASTMetric specified by `sym`.
+"""
+function record(mdp::ASTMDP, sym::Symbol, val)
+    if mdp.params.debug
+        push!(getproperty(mdp.metrics, sym), val)
+    end
+end
 
 
 """
@@ -175,7 +207,8 @@ Reward function for the AST formulation. Defaults to:
     -∞,             s ̸∈ Event and t ≥ T  # Terminates without event, maximum negative reward of -∞
     log P(s′ | s),  s ̸∈ Event and t < T  # Each non-terminal step, accumulate reward correlated with the transition probability
 """
-function POMDPs.reward(mdp::ASTMDP, prob::Float64, isevent::Bool, isterminal::Bool, miss_distance::Float64)
+function POMDPs.reward(mdp::ASTMDP, logprob::Float64, isevent::Bool, isterminal::Bool, miss_distance::Float64)
+#=
     r = log(prob)
     if mdp.params.distance_reward
         # Alternate reward: use miss_distance at isevent to drive towards severity!
@@ -188,8 +221,76 @@ function POMDPs.reward(mdp::ASTMDP, prob::Float64, isevent::Bool, isterminal::Bo
         elseif isterminal
             # Add miss distance cost only if !isevent && isterminal
             r += -miss_distance
+            # record(mdp, :prob, prob)
+            # record(mdp, :log_prob, log(prob))
+            # record(mdp, :miss_distance, miss_distance)
         end
     end
+    # record(mdp, :reward, r)
+=#
+
+    # Eq. (11) alg4bb
+    # if isevent || isterminal
+    #     r = log(prob) # - miss_distance
+    # else
+    #     r = -miss_distance
+    # end
+
+    # TODO: Eq. (11) in alg4bb 
+    # flipped
+    # if isevent || isterminal
+
+    # r = log(prob)
+    # if isevent
+    #     r += 0
+    # elseif isterminal
+    #     r += -miss_distance
+    # end
+
+
+    # TODO: consolodate or try different event bonuses.
+    # r = log(prob)
+#=
+    r = logprob
+    if isevent
+        # r += 10*(-miss_distance)
+        r += -miss_distance
+    elseif isterminal
+        r += -miss_distance
+    end
+=#
+    r = logprob
+    r += -miss_distance
+    if isevent
+        r *= 100
+    end
+
+
+
+    # r = -miss_distance
+    # if isevent
+    #     r *= 100
+    # end
+
+
+
+    # if isevent
+    #     r = 10*(-miss_distance)
+    # elseif isterminal
+    #     r = -miss_distance
+    #     # r = log(prob) - miss_distance
+    # else
+    #     r = log(prob)
+    #     # r = -miss_distance
+    # end
+
+    # @show prob
+    # record(mdp, :prob, prob)
+    record(mdp, :prob, exp(logprob))
+    # record(mdp, :log_prob, log(prob))
+    record(mdp, :log_prob, logprob)
+    record(mdp, :miss_distance, miss_distance)
+    record(mdp, :reward, r)
     return r
 end
 
@@ -216,7 +317,8 @@ end
 
 
 # TODO: Handle `rng`
-# Generate next state for AST
+# Generate next state and reward for AST
+#=
 """
 Generate next state and reward for AST MDP. Overridden from `POMDPs.gen` interface.
 """
@@ -236,6 +338,36 @@ function POMDPs.gen(mdp::ASTMDP, s::ASTState, a::ASTAction, rng::AbstractRNG)
     sp.q_value = r
 
     return (sp=sp, r=r)
+end
+=#
+
+
+
+
+# Generate next state and reward (0) for non-sequential problem
+"""
+TODO: Generate next state and reward for AST MDP. Overridden from `POMDPs.gen` interface.
+"""
+function POMDPs.gen(::DDNOut, mdp::ASTMDP, s::ASTState, a::ASTAction, rng::AbstractRNG) # TODO. How to control `sequential`?
+    @assert mdp.sim_hash == s.hash
+    mdp.t_index += 1
+    set_global_seed(a.rsg)
+
+    # Step black-box simulation
+    if mdp.sequential
+        (prob::Float64, isevent::Bool, miss_distance::Float64) = BlackBox.evaluate(mdp.sim)
+    else
+        (prob, ) = BlackBox.transition_model(mdp.sim)
+    end
+
+    # Update state
+    sp = ASTState(mdp.t_index, s, a)
+    mdp.sim_hash = sp.hash
+    sp.terminal = mdp.sequential ? BlackBox.isterminal(mdp.sim) : false
+    r::Float64 = mdp.sequential ? reward(mdp, prob, isevent, sp.terminal, miss_distance) : 0
+    sp.q_value = r
+
+    return (sp=sp, r=r, p=prob)
 end
 
 
@@ -280,15 +412,17 @@ function go_to_state(mdp::ASTMDP, target_state::ASTState)
     BlackBox.initialize(mdp.sim)
     actions = get_action_sequence(target_state) # TODO: duplicate of action_trace
     R = 0.0
+    P = 1
     for a in actions
-        s, r = gen(mdp, s, a, Random.GLOBAL_RNG)
+        s, r, p = gen(DDNOut(:sp, :r, :p), mdp, s, a, Random.GLOBAL_RNG)
         R += r
+        P *= p
     end
     @assert s == target_state
 
     record_trace(mdp, actions, R)
 
-    return (R, actions)
+    return (R, actions, P)
 end
 
 
@@ -297,7 +431,7 @@ end
 Record paths from leaf node that lead to an event.
 """
 function record_trace(mdp::ASTMDP, actions::Vector{ASTAction}, summed_q_values::Float64)
-    if mdp.params.top_k > 0 && BlackBox.isevent(mdp.sim)
+    if mdp.params.top_k > 0 && BlackBox.isevent(mdp.sim) # TODO. include toggle for isevent requirement or not.
         if !haskey(mdp.top_paths, actions)
             enqueue!(mdp.top_paths, actions, summed_q_values)
             while length(mdp.top_paths) > mdp.params.top_k
@@ -318,12 +452,44 @@ function rollout(mdp::ASTMDP, s::ASTState, d::Int64)
         # TODO Efficiency: To make this more efficient, collect trace as rollout is called (instead of tracing back up the tree)
         # TODO Efficiency: Call record_trace directly with the `action_trace` and `q_trace` outputs.
         go_to_state(mdp, s) # Records trace through this call
+        # TODO: check to call evaluate.
         return 0.0
     else
         a::ASTAction = random_action(mdp) # TODO: Use "POMDPs.action", requires MCTS planner
 
         (sp, r) = gen(DDNOut(:sp, :r), mdp, s, a, Random.GLOBAL_RNG)
         q_value = r + discount(mdp)*rollout(mdp, sp, d-1)
+
+        return q_value
+    end
+end
+
+
+"""
+Rollout to only execute SUT at end (`p` accounts for probabilities generated outside the rollout)
+"""
+function rollout_end(mdp::ASTMDP, s::ASTState, d::Int64; dead_end::Bool=true, p=1)
+    a::ASTAction = random_action(mdp) # TODO: Use "POMDPs.action", requires MCTS planner
+
+    # DEAD_END_ROLLOUT = true # short-circuit
+
+    if dead_end || d == 0 || isterminal(mdp, s)
+        # Step black-box simulation
+        (prob::Float64, isevent::Bool, miss_distance::Float64) = BlackBox.evaluate(mdp.sim)
+
+        # Update state
+        sp = ASTState(mdp.t_index, s, a)
+        mdp.sim_hash = sp.hash
+        sp.terminal = BlackBox.isterminal(mdp.sim)
+        r::Float64 = reward(mdp, p*prob, isevent, sp.terminal, miss_distance)
+        sp.q_value = r
+
+        return r
+    else
+        # (sp, r, p′) = gen(DDNOut(:sp, :r, :p), mdp, s, a, Random.GLOBAL_RNG)
+        # q_value = r + discount(mdp)*rollout_end(mdp, sp, d-1; p=(p*p′))
+        (sp, r) = gen(DDNOut(:sp, :r), mdp, s, a, Random.GLOBAL_RNG)
+        q_value = r + discount(mdp)*rollout_end(mdp, sp, d-1; dead_end=dead_end)
 
         return q_value
     end
@@ -425,7 +591,7 @@ function playback(mdp::ASTMDP, actions::Vector{ASTAction}, func=sim->sim.x; verb
     # TODO: This is Walk1D specific!
     @show func(mdp.sim)
     for a in actions
-        (sp, r) = gen(mdp, s, a, rng)
+        (sp, r) = gen(DDNOut(:sp, :r), mdp, s, a, rng)
         s = sp
         # TODO: This is Walk1D specific!
         if verbose
@@ -451,12 +617,12 @@ function online_path(mdp::MDP, planner::Policy; verbose::Bool=false)
     a = action(planner, s)
     actions = ASTAction[a]
     printstep(mdp, a)
-    (s, r) = gen(mdp, s, a, Random.GLOBAL_RNG)
+    (s, r) = gen(DDNOut(:sp, :r), mdp, s, a, Random.GLOBAL_RNG)
 
     while !BlackBox.isterminal(mdp.sim)
         a = action(planner, s)
         push!(actions, a)
-        (s, r) = gen(mdp, s, a, Random.GLOBAL_RNG)
+        (s, r) = gen(DDNOut(:sp, :r), mdp, s, a, Random.GLOBAL_RNG)
         printstep(mdp, a)
     end
 
@@ -503,6 +669,19 @@ function q_trace(s::ASTState)
         s = s.parent
     end
     return q_value::Float64
+end
+
+
+"""
+    Play out the optimal path given an MDP and a policy/planner.
+
+    This is the main entry function to get a full failure trajectory from the policy.
+"""
+function playout(mdp, planner)
+    initstate = initialstate(mdp)
+    tree = MCTS.action_info(planner, initstate, tree_in_info=true)[2][:tree] # see TreeVisualizer.visualize
+    action_path::Vector = get_optimal_path(mdp, tree, initstate, verbose=true)
+    return action_path
 end
 
 

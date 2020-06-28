@@ -46,7 +46,7 @@ function miss_distance end
 
 
 """
-    transition_model(sim::BlackBox.Simulation)
+    transition_model(sim::BlackBox.Simulation)::Tuple(prob, sample)
 
 Return the transition probability and sampled value given the current state [0-1].
 """

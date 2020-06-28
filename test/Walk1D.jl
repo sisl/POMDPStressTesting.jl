@@ -99,7 +99,9 @@ function runtest()
 
 	# AST specific parameters
 	top_k::Int = 10 # Save top performing paths
-	ast_params::AST.Params = AST.Params(max_steps, rsg_length, seed, top_k)
+	distance_reward::Bool = false
+	debug::Bool = false
+	ast_params::AST.Params = AST.Params(max_steps, rsg_length, seed, top_k, distance_reward, debug)
 
 	# AST MDP formulation object
 	mdp::AST.ASTMDP = AST.ASTMDP(ast_params, sim)
