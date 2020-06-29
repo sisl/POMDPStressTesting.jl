@@ -197,6 +197,14 @@ function record(mdp::ASTMDP, sym::Symbol, val)
     end
 end
 
+function record(mdp::ASTMDP; prob=1, log_prob=exp(1), miss_distance=Inf, reward=-Inf)
+    AST.record(mdp, :prob, prob)
+    AST.record(mdp, :log_prob, log_prob)
+    AST.record(mdp, :miss_distance, miss_distance)
+    AST.record(mdp, :reward, reward)
+end
+
+
 
 """
     reward(s::State)::Float64
