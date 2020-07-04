@@ -162,6 +162,7 @@ Adaptive Stress Testing MDP simulation object.
 """
 mutable struct ASTMDP <: MDP{ASTState, ASTAction}
     sequential::Bool # sequential decision making process or single/buffer-shot
+    give_intermediate_reward::Bool # give log-probability as reward during intermediate gen calls.
     params::Params # AST simulation parameters
     sim::BlackBox.Simulation # Black-box simulation struct
     sim_hash::UInt64 # Hash to keep simulations in sync
@@ -179,7 +180,7 @@ mutable struct ASTMDP <: MDP{ASTState, ASTAction}
     function ASTMDP(params::Params, sim)
         rsg::RSG = RSG(params.rsg_length, params.init_seed)
         top_paths = PriorityQueue{Any, Float64}(Base.Order.Forward)
-        return new(true, params, sim, hash(0), 1, rsg, deepcopy(rsg), !isnothing(params.reset_seed) ? RSG(params.rsg_length, params.reset_seed) : nothing, top_paths, ASTMetrics())
+        return new(true, true, params, sim, hash(0), 1, rsg, deepcopy(rsg), !isnothing(params.reset_seed) ? RSG(params.rsg_length, params.reset_seed) : nothing, top_paths, ASTMetrics())
     end
 end
 
@@ -248,13 +249,14 @@ function POMDPs.reward(mdp::ASTMDP, logprob::Float64, isevent::Bool, isterminal:
     # flipped
     # if isevent || isterminal
 
-    # r = log(prob)
-    # if isevent
-    #     r += 0
-    # elseif isterminal
-    #     r += -miss_distance
-    # end
-
+#=
+    r = logprob
+    if isevent
+        r += 0
+    elseif isterminal
+        r += -miss_distance
+    end
+=#
 
     # TODO: consolodate or try different event bonuses.
     # r = log(prob)
@@ -266,13 +268,26 @@ function POMDPs.reward(mdp::ASTMDP, logprob::Float64, isevent::Bool, isterminal:
     elseif isterminal
         r += -miss_distance
     end
+
 =#
+    
+    # shift_prob = false
+    # if shift_prob
+    #     # ... # inverse 
+    #     logprob = 50logprob .- 50*log(1e-95)
+    # end
+
     r = logprob
     r += -miss_distance
     if isevent
         r *= 100
     end
 
+    # r = -miss_distance
+    # if isevent
+    #     r += logprob
+    #     r *= 100
+    # end
 
 
     # r = -miss_distance
@@ -360,6 +375,7 @@ function POMDPs.gen(::DDNOut, mdp::ASTMDP, s::ASTState, a::ASTAction, rng::Abstr
     @assert mdp.sim_hash == s.hash
     mdp.t_index += 1
     set_global_seed(a.rsg)
+    push!(mdp.sim.actions, a)
 
     # Step black-box simulation
     if mdp.sequential
@@ -372,7 +388,8 @@ function POMDPs.gen(::DDNOut, mdp::ASTMDP, s::ASTState, a::ASTAction, rng::Abstr
     sp = ASTState(mdp.t_index, s, a)
     mdp.sim_hash = sp.hash
     sp.terminal = mdp.sequential ? BlackBox.isterminal(mdp.sim) : false
-    r::Float64 = mdp.sequential ? reward(mdp, prob, isevent, sp.terminal, miss_distance) : 0
+    intermediate_reward = mdp.give_intermediate_reward ? prob : 0
+    r::Float64 = mdp.sequential ? reward(mdp, prob, isevent, sp.terminal, miss_distance) : intermediate_reward
     sp.q_value = r
 
     return (sp=sp, r=r, p=prob)
@@ -473,31 +490,64 @@ function rollout(mdp::ASTMDP, s::ASTState, d::Int64)
 end
 
 
+
 """
 Rollout to only execute SUT at end (`p` accounts for probabilities generated outside the rollout)
 """
-function rollout_end(mdp::ASTMDP, s::ASTState, d::Int64; dead_end::Bool=true, p=1)
+function rollout_end(mdp::ASTMDP, s::ASTState, d::Int64; dead_end::Bool=true, p=1, max_depth=-1, first_gen=missing, best_callback=(sm,r)->sm)
+
+    sim = mdp.sim
     a::ASTAction = random_action(mdp) # TODO: Use "POMDPs.action", requires MCTS planner
 
     # DEAD_END_ROLLOUT = true # short-circuit
+    # println("Rollout depth=$d, length of waypoints=$(length(sim.waypoints))")
 
     if dead_end || d == 0 || isterminal(mdp, s)
+        set_global_seed(a.rsg)
+        push!(sim.actions, a)
+
         # Step black-box simulation
-        (prob::Float64, isevent::Bool, miss_distance::Float64) = BlackBox.evaluate(mdp.sim)
+        (prob::Float64, isevent::Bool, miss_distance::Float64) = BlackBox.evaluate(sim)
 
         # Update state
         sp = ASTState(mdp.t_index, s, a)
         mdp.sim_hash = sp.hash
-        sp.terminal = BlackBox.isterminal(mdp.sim)
+        sp.terminal = BlackBox.isterminal(sim)
         r::Float64 = reward(mdp, p*prob, isevent, sp.terminal, miss_distance)
         sp.q_value = r
 
+        best_callback(sim, miss_distance)
+        # best_callback(sim, r)
+        # best_callback(sim, miss_distance, prob, r)
+
         return r
     else
+        # TODO. Monte Carlo population tree search (MCPTS) MCTS parallelized over a population. MCTS + GAs (mutation, crossover, etc. with tree branches, see Anthony's work)
+
         # (sp, r, p′) = gen(DDNOut(:sp, :r, :p), mdp, s, a, Random.GLOBAL_RNG)
         # q_value = r + discount(mdp)*rollout_end(mdp, sp, d-1; p=(p*p′))
-        (sp, r) = gen(DDNOut(:sp, :r), mdp, s, a, Random.GLOBAL_RNG)
-        q_value = r + discount(mdp)*rollout_end(mdp, sp, d-1; dead_end=dead_end)
+
+        start_of_rollout_injection = false
+        mid_rollout_injection = true
+
+        # start of rollout best-action injection OR mid-rollout best-action injection. # TODO. trigger function.
+        if !ismissing(first_gen) && ( (start_of_rollout_injection && d == max_depth-1) || (mid_rollout_injection && d == div(max_depth,2)) )
+
+            # TODO. Change this conditional to be a range to support k number of top miss distances.
+            # try
+                (sp, r) = first_gen(mdp, s, a, Random.GLOBAL_RNG)
+                # (sp, r) = first_gen(mdp, s, a, Random.GLOBAL_RNG; max_depth=max_depth)
+                # (sp, r) = first_gen(mdp, s, a, Random.GLOBAL_RNG; d=d, max_depth=max_depth)
+            # catch err
+            #     (sp, r) = gen(DDNOut(:sp, :r), mdp, s, a, Random.GLOBAL_RNG)
+            # end
+
+        else
+            (sp, r) = gen(DDNOut(:sp, :r), mdp, s, a, Random.GLOBAL_RNG)
+        end
+
+        # Note, pass all keywords.
+        q_value = r + discount(mdp)*rollout_end(mdp, sp, d-1; dead_end=dead_end, p=p, max_depth=max_depth, first_gen=first_gen, best_callback=best_callback)
 
         return q_value
     end
