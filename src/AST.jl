@@ -277,11 +277,22 @@ function POMDPs.reward(mdp::ASTMDP, logprob::Float64, isevent::Bool, isterminal:
     #     logprob = 50logprob .- 50*log(1e-95)
     # end
 
+#=
     r = logprob
     r += -miss_distance
     if isevent
         r *= 100
     end
+=#
+    # ^ SAME for non-sequential problems.
+    r = 0
+    if isterminal
+        r += logprob - miss_distance
+    end
+    if isevent
+        r *= 100
+    end
+
 
     # r = -miss_distance
     # if isevent
