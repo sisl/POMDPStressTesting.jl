@@ -101,7 +101,7 @@ end
 
 
 # Override from BlackBox
-function BlackBox.initialize(sim::CEMSim)
+function BlackBox.initialize!(sim::CEMSim)
 	sim.t = 0
 	sim.distribution = MvNormal([0.,0], [200 0; 0. 200]) # TODO. Shared.
 	sim.μ = sim.distribution.μ
@@ -115,7 +115,7 @@ end
 
 
 # Override from BlackBox
-function BlackBox.transition_model(sim::CEMSim)
+function BlackBox.transition_model!(sim::CEMSim)
 	
 	# Cross-entropy method.
     samples = rand(sim.distribution, sim.p.m) # Draw samples from distribution
@@ -133,29 +133,29 @@ end
 
 
 # # Override from BlackBox
-BlackBox.isevent(sim::CEMSim) = all(abs(sim.f(sim.μ) - sim.f([0,0])) .<= [sim.p.fthresh, sim.p.fthresh]) && all(map(m->m <= sim.p.Σthresh, abs.(sim.distribution.Σ.mat)))
+BlackBox.isevent!(sim::CEMSim) = all(abs(sim.f(sim.μ) - sim.f([0,0])) .<= [sim.p.fthresh, sim.p.fthresh]) && all(map(m->m <= sim.p.Σthresh, abs.(sim.distribution.Σ.mat)))
 # abs(sim.μ) <= sim.p.μthresh && 
 
 # # Override from BlackBox
-BlackBox.miss_distance(sim::CEMSim) = abs(sim.f(sim.μ)) # TODO. -sim.(f(sim.μ)) # negative instead of abs()
+BlackBox.miss_distance!(sim::CEMSim) = abs(sim.f(sim.μ)) # TODO. -sim.(f(sim.μ)) # negative instead of abs()
 # max(sim.p.threshx - abs(sim.x), 0) # Non-negative
 
 # Override from BlackBox
-BlackBox.isterminal(sim::CEMSim) = BlackBox.isevent(sim) || sim.t >= sim.p.endtime
+BlackBox.isterminal!(sim::CEMSim) = BlackBox.isevent!(sim) || sim.t >= sim.p.endtime
 
 
 # Override from BlackBox
-function BlackBox.evaluate(sim::CEMSim)
+function BlackBox.evaluate!(sim::CEMSim)
 	sim.t += 1
-	logprob::Float64 = BlackBox.transition_model(sim)
+	logprob::Float64 = BlackBox.transition_model!(sim)
 	# sim.x += sample
 	sim.μ = sim.distribution.μ
-	miss_distance = BlackBox.miss_distance(sim)
+	miss_distance = BlackBox.miss_distance!(sim)
 	# @show sim.μ, miss_distance, logprob
 	if sim.p.logging
 		push!(sim.history, (μ = sim.μ, Σ = sim.distribution.Σ, elite = sim.elite, samples = sim.samples))
 	end
-	event::Bool = BlackBox.isevent(sim)
+	event::Bool = BlackBox.isevent!(sim)
 	if event
 		print("\rIsEvent!: $(sim.f(sim.μ) - sim.f([0,0]))")
 	end

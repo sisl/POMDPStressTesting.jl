@@ -37,7 +37,7 @@ end
 
 
 # Override from BlackBox
-function BlackBox.initialize(sim::Walk1DSim)
+function BlackBox.initialize!(sim::Walk1DSim)
 	sim.t = 0
 	sim.x = sim.p.startx
 	empty!(sim.history)
@@ -48,7 +48,7 @@ end
 
 
 # Override from BlackBox
-function BlackBox.transition_model(sim::Walk1DSim)
+function BlackBox.transition_model!(sim::Walk1DSim)
 	sample = rand(sim.distribution) # Sample value from distribution
 	prob = pdf(sim.distribution, sample) # Get probability of sample
 	return (prob, sample)
@@ -56,32 +56,31 @@ end
 
 
 # Override from BlackBox
-BlackBox.isevent(sim::Walk1DSim) = abs(sim.x) >= sim.p.threshx
+BlackBox.isevent!(sim::Walk1DSim) = abs(sim.x) >= sim.p.threshx
 
 
 # Override from BlackBox
-BlackBox.miss_distance(sim::Walk1DSim) = max(sim.p.threshx - abs(sim.x), 0) # Non-negative
+BlackBox.miss_distance!(sim::Walk1DSim) = max(sim.p.threshx - abs(sim.x), 0) # Non-negative
 
 
 # Override from BlackBox
-BlackBox.isterminal(sim::Walk1DSim) = BlackBox.isevent(sim) || sim.t >= sim.p.endtime
+BlackBox.isterminal!(sim::Walk1DSim) = BlackBox.isevent!(sim) || sim.t >= sim.p.endtime
 
 
 # Override from BlackBox
-function BlackBox.evaluate(sim::Walk1DSim)
+function BlackBox.evaluate!(sim::Walk1DSim)
 	sim.t += 1
-	(prob::Float64, sample::Float64) = BlackBox.transition_model(sim)
+	(prob::Float64, sample::Float64) = BlackBox.transition_model!(sim)
 	sim.x += sample
-	miss_distance = BlackBox.miss_distance(sim)
-	# @show sim.x, miss_distance, prob
+	miss_distance = BlackBox.miss_distance!(sim)
 	if sim.p.logging
 		push!(sim.history, sim.x)
 	end
-	return (prob, BlackBox.isevent(sim), miss_distance)
+	return (prob, BlackBox.isevent!(sim), miss_distance)
 end
 
 
-function runtest()
+function setup_ast()
 	max_steps = 25 # Simulation end-time
 	rsg_length = 2 # Number of unique available random seeds
 	seed = 1 # RNG seed
@@ -99,13 +98,11 @@ function runtest()
 
 	# AST specific parameters
 	top_k::Int = 10 # Save top performing paths
-	distance_reward::Bool = false
-	debug::Bool = false
-	ast_params::AST.Params = AST.Params(max_steps, rsg_length, seed, top_k, distance_reward, debug)
+	debug::Bool = true
+	ast_params::AST.Params = AST.Params(max_steps, rsg_length, seed, top_k, debug)
 
 	# AST MDP formulation object
 	mdp::AST.ASTMDP = AST.ASTMDP(ast_params, sim)
-	# mdp.reset_rsg = AST.RandomSeedGenerator.RSG()
 
 	# @requirements_info MCTSSolver() mdp
 
@@ -116,13 +113,12 @@ function runtest()
 	solver = MCTS.DPWSolver(
 			estimate_value=AST.rollout, # TODO: required.
 			depth=max_steps,
-			enable_state_pw=false, # Custom fork of MCTS.jl (PR submitted) # TODO: best practice/required.
+			enable_state_pw=false, # Best practice/required.
 			exploration_constant=10.0,
 			k_action=0.1,
 			alpha_action=0.85,
 			n_iterations=1000,
-			# next_action=AST.next_action, # Unnecessary, implemented by MCTS.jl
-			reset_callback=AST.go_to_state, # Custom fork of MCTS.jl # TODO: required.
+			reset_callback=AST.go_to_state, # Custom fork of MCTS.jl
 			tree_in_info=true)#, rng=rng)
 
 	planner = solve(solver, mdp)
@@ -131,11 +127,13 @@ function runtest()
 	# a = action(planner, s)
 
 	# Playback the best path in the tree
-	# AST.playback(mdp) # TODO: export playback
+	# AST.playback(mdp, func=sim->sim.x) # TODO: export playback
 
 	# display(sim.history)
 
-	return (planner, mdp, sim, solver)
+	return (planner, mdp, sim)
 end
 
-(planner, mdp, sim, solver) = runtest();
+
+## Example:
+# (planner, mdp, sim) = setup_ast();

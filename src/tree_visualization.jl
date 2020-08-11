@@ -1,11 +1,6 @@
-module TreeVisualization
-
-export visualize, full_width_notebook
-
-using POMDPStressTesting
 using POMDPPolicies
-using MCTS
 using D3Trees
+using MCTS
 
  # Full width cells in Jupyter notebook
 full_width_notebook() = display(HTML("<style>.container { width:100% !important; }</style>"))
@@ -34,15 +29,13 @@ end
 """
 Visualize MCTS tree structure for AST MDP.
 """
-function visualize(mdp::AST.ASTMDP, planner::DPWPlanner)
-	state::AST.ASTState = AST.initialstate(mdp)
-	(action::AST.ASTAction, info) = action_info(planner, state, tree_in_info=true)
-	d3::D3Tree = D3Tree(info[:tree], init_expand=1)
-
-	action_path::Vector{AST.ASTAction} = AST.get_optimal_path(mdp, info[:tree], AST.initialstate(mdp), verbose=false)
-
+function visualize(mdp::AST.ASTMDP, planner::MCTS.DPWPlanner)
+    tree = playout(mdp, planner; return_tree=true)
+    d3 = visualize(tree)
 	return d3::D3Tree
 end
 
-
-end # module TreeVisualization
+function visualize(tree::MCTS.DPWTree)
+    d3::D3Tree = D3Tree(tree, init_expand=1)
+    return d3::D3Tree
+end

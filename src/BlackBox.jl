@@ -5,12 +5,12 @@ module BlackBox
 
 export
 	Simulation,
-	initialize,
-    isevent,
-    miss_distance,
-    transition_model,
-    evaluate,
-    isterminal
+	initialize!,
+    isevent!,
+    miss_distance!,
+    transition_model!,
+    evaluate!,
+    isterminal!
 
 
 """
@@ -22,51 +22,51 @@ abstract type Simulation end
 
 
 """
-    initialize(sim::BlackBox.Simulation)
+    initialize!(sim::BlackBox.Simulation)
 
 Reset state to its initial state.
 """
-function initialize end
+function initialize! end
 
 
 """
-    isevent(sim::BlackBox.Simulation)::Bool
+    isevent!(sim::BlackBox.Simulation)::Bool
 
 Return a boolean indicating if the SUT reached an event of interest.
 """
-function isevent end
+function isevent! end
 
 
 """
-    miss_distance(sim::BlackBox.Simulation)
+    miss_distance!(sim::BlackBox.Simulation)
 
 Return how close to an event a terminal state was (i.e. some measure of "miss distance" to the event of interest).
 """
-function miss_distance end
+function miss_distance! end
 
 
 """
-    transition_model(sim::BlackBox.Simulation)::Tuple(prob, sample)
+    transition_model!(sim::BlackBox.Simulation)::Tuple(logprob, sample)
 
 Return the transition probability and sampled value given the current state [0-1].
 """
-function transition_model end
+function transition_model! end
 
 
 """
-    evaluate(sim::BlackBox.Simulation)::Tuple(transition_probability, isevent, miss_distance)
+    evaluate!(sim::BlackBox.Simulation)::Tuple(transition_probability, isevent, miss_distance)
 
 Evaluate the SUT given some input seed and current state, returns `transition_probability`, `isevent` indication, and `miss_distance`.
 """
-function evaluate end
+function evaluate! end
 
 
 """
-    isterminal(sim::BlackBox.Simulation)::Bool
+    isterminal!(sim::BlackBox.Simulation)::Bool
 
 Return an indication that the simulation is in a terminal state.
 """
-function isterminal end
+function isterminal! end
 
 
 end # module BlackBox
