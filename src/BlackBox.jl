@@ -4,8 +4,8 @@ Provides virtual interface for the black-box system under test (SUT)
 module BlackBox
 
 export
-	Simulation,
-	initialize!,
+    Simulation,
+    initialize!,
     evaluate!,
     transition_model!,
     isevent!,
@@ -14,7 +14,7 @@ export
 
 
 """
-	BlackBox.Simulation
+    BlackBox.Simulation
 
 Abstract base type for a black-box simulation.
 """
