@@ -208,7 +208,7 @@ end
 """
 Generate next state and reward for AST MDP (handles episodic reward problems). Overridden from `POMDPs.gen` interface.
 """
-function POMDPs.gen(::DDNOut, mdp::ASTMDP, s::ASTState, a::ASTAction, rng::AbstractRNG)
+function POMDPs.gen(mdp::ASTMDP, s::ASTState, a::ASTAction, rng::AbstractRNG)
     @assert mdp.sim_hash == s.hash
     mdp.t_index += 1
     set_global_seed(a.rsg)
@@ -279,7 +279,7 @@ function go_to_state(mdp::ASTMDP, target_state::ASTState)
     actions = action_trace(target_state)
     R = 0.0
     for a in actions
-        s, r = gen(DDNOut(:sp, :r), mdp, s, a, Random.GLOBAL_RNG)
+        s, r = @gen(:sp, :r)(mdp, s, a, Random.GLOBAL_RNG)
         R += r
     end
     @assert s == target_state
@@ -318,7 +318,7 @@ function rollout(mdp::ASTMDP, s::ASTState, d::Int64)
     else
         a::ASTAction = random_action(mdp)
 
-        (sp, r) = gen(DDNOut(:sp, :r), mdp, s, a, Random.GLOBAL_RNG)
+        (sp, r) = @gen(:sp, :r)(mdp, s, a, Random.GLOBAL_RNG)
         q_value = r + discount(mdp)*rollout(mdp, sp, d-1)
 
         return q_value
@@ -367,7 +367,7 @@ function rollout_end(mdp::ASTMDP, s::ASTState, d::Int64; max_depth=-1, feed_gen=
         if feed_available && (start_of_rollout_feed || mid_rollout_feed)
             (sp, r) = feed_gen(mdp, s, a, Random.GLOBAL_RNG)
         else
-            (sp, r) = gen(DDNOut(:sp, :r), mdp, s, a, Random.GLOBAL_RNG)
+            (sp, r) = @gen(:sp, :r)(mdp, s, a, Random.GLOBAL_RNG)
         end
 
         # Note, pass all keywords.
@@ -444,7 +444,7 @@ function playback(mdp::ASTMDP, actions::Vector{ASTAction}, func=nothing; verbose
         @show func(mdp.sim)
     end
     for a in actions
-        (sp, r) = gen(DDNOut(:sp, :r), mdp, s, a, rng)
+        (sp, r) = @gen(:sp, :r)(mdp, s, a, rng)
         s = sp
         if display_trace
             @show func(mdp.sim)
@@ -469,12 +469,12 @@ function online_path(mdp::MDP, planner::Policy; verbose::Bool=false)
     a = action(planner, s)
     actions = ASTAction[a]
     printstep(mdp, a)
-    (s, r) = gen(DDNOut(:sp, :r), mdp, s, a, Random.GLOBAL_RNG)
+    (s, r) = @gen(:sp, :r)(mdp, s, a, Random.GLOBAL_RNG)
 
     while !BlackBox.isterminal!(mdp.sim)
         a = action(planner, s)
         push!(actions, a)
-        (s, r) = gen(DDNOut(:sp, :r), mdp, s, a, Random.GLOBAL_RNG)
+        (s, r) = @gen(:sp, :r)(mdp, s, a, Random.GLOBAL_RNG)
         printstep(mdp, a)
     end
 
