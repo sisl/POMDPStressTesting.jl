@@ -7,22 +7,25 @@ include("AST.jl")
 include("tree_visualization.jl")
 include("figures.jl")
 
-import .AST: ASTMDP,
-             ASTState,
-             ASTAction,
-             ASTMetrics,
-             BlackBox,
-             playout
+using .AST
 
 export AST,
        ASTMDP,
+       ASTParams,
        ASTState,
        ASTAction,
        BlackBox,
        playout,
+       playback,
+       online_path,
+       get_top_path,
        visualize,
        full_width_notebook,
        episodic_figures,
-       distribution_figures
+       distribution_figures,
+       print_metrics,
+       MCTSASTSolver,
+       solve # from MCTS
+
 
 end # module POMDPStressTesting

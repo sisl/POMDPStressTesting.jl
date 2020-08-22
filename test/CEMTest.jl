@@ -1,7 +1,5 @@
 using Revise # DEBUG
 
-# Based on Ritchie Lee's Walk1D in AdaptiveStressTesting.jl examples.
-
 using POMDPStressTesting
 using Distributions
 using Random
@@ -115,7 +113,7 @@ end
 
 
 # Override from BlackBox
-function BlackBox.transition_model!(sim::CEMSim)
+function BlackBox.transition!(sim::CEMSim)
 	
 	# Cross-entropy method.
     samples = rand(sim.distribution, sim.p.m) # Draw samples from distribution
@@ -137,7 +135,7 @@ BlackBox.isevent!(sim::CEMSim) = all(abs(sim.f(sim.μ) - sim.f([0,0])) .<= [sim.
 # abs(sim.μ) <= sim.p.μthresh && 
 
 # # Override from BlackBox
-BlackBox.miss_distance!(sim::CEMSim) = abs(sim.f(sim.μ)) # TODO. -sim.(f(sim.μ)) # negative instead of abs()
+BlackBox.distance!(sim::CEMSim) = abs(sim.f(sim.μ)) # TODO. -sim.(f(sim.μ)) # negative instead of abs()
 # max(sim.p.threshx - abs(sim.x), 0) # Non-negative
 
 # Override from BlackBox
@@ -147,10 +145,10 @@ BlackBox.isterminal!(sim::CEMSim) = BlackBox.isevent!(sim) || sim.t >= sim.p.end
 # Override from BlackBox
 function BlackBox.evaluate!(sim::CEMSim)
 	sim.t += 1
-	logprob::Float64 = BlackBox.transition_model!(sim)
+	logprob::Float64 = BlackBox.transition!(sim)
 	# sim.x += sample
 	sim.μ = sim.distribution.μ
-	miss_distance = BlackBox.miss_distance!(sim)
+	miss_distance = BlackBox.distance!(sim)
 	# @show sim.μ, miss_distance, logprob
 	if sim.p.logging
 		push!(sim.history, (μ = sim.μ, Σ = sim.distribution.Σ, elite = sim.elite, samples = sim.samples))
@@ -159,13 +157,12 @@ function BlackBox.evaluate!(sim::CEMSim)
 	if event
 		print("\rIsEvent!: $(sim.f(sim.μ) - sim.f([0,0]))")
 	end
-	return (logprob, event, miss_distance)
+	return (logprob, miss_distance, event)
 end
 
 
 function runtest()
 	max_steps = 25 # Simulation end-time
-	rsg_length = 2 # Number of unique available random seeds
 	seed = 1 # RNG seed
 
 	# Setup black-box specific simulation parameters
@@ -178,13 +175,11 @@ function runtest()
 
 	# AST specific parameters
 	top_k::Int = 10 # Save top performing paths
-	distance_reward::Bool = false
 	debug::Bool = false
-	ast_params::AST.Params = AST.Params(max_steps, rsg_length, seed, top_k, distance_reward, debug)
+	ast_params::ASTParams = ASTParams(max_steps, seed, top_k, debug)
 
 	# AST MDP formulation object
 	mdp::AST.ASTMDP = AST.ASTMDP(ast_params, sim)
-	# mdp.reset_rsg = AST.RandomSeedGenerator.RSG()
 
 	# @requirements_info MCTSSolver() mdp
 
@@ -205,22 +200,22 @@ function runtest()
 			reset_callback=AST.go_to_state, # Custom fork of MCTS.jl # TODO: required.
 			tree_in_info=true)#, rng=rng)
 
-	planner = solve(solver, mdp)
+	policy = solve(solver, mdp)
 
 	# s = initialstate(mdp, rng) # rng not used
-	# a = action(planner, s)
+	# a = action(policy, s)
 
 	# Playback the best path in the tree
 	# AST.playback(mdp) # TODO: export playback
 
 	# display(sim.history)
 
-	# AST.plotout(mdp, planner)
+	# AST.plotout(mdp, policy)
 
-	return (planner, mdp, sim, solver)
+	return (policy, mdp, sim, solver)
 end
 
-(planner, mdp, sim, solver) = runtest();
+(policy, mdp, sim, solver) = runtest();
 
 
 
@@ -295,7 +290,7 @@ MWE:
 
 include("test\\CEMTest.jl")
 
-A = AST.playout(mdp, planner)
+A = AST.playout(mdp, policy)
 # or
 A = collect(keys(mdp.top_paths))[1]
 

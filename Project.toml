@@ -1,7 +1,7 @@
 name = "POMDPStressTesting"
 uuid = "6fc570d8-62cd-4d35-b113-bbf3c1b8276a"
 authors = ["Robert Moss <mossr@cs.stanford.edu>"]
-version = "0.2.1"
+version = "0.3.0"
 
 [deps]
 D3Trees = "e3df1716-f71e-5df9-9e2d-98e193103c45"
@@ -21,3 +21,11 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 [compat]
 POMDPs = "0.9"
 julia = "1"
+
+[extras]
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+Parameters = "d96e819e-fc66-5662-9728-84c9c7592b0a"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Distributions", "Parameters", "Test"]

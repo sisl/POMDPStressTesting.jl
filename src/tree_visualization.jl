@@ -16,7 +16,7 @@ function MCTS.node_tag(s::AST.ASTState)
 end
 
 # Display of state nodes.
-seeds2string(a) = join(map(s->"0x" * string(s, base=16), a.rsg.state), ",\n")
+seeds2string(a) = join(map(s->"0x" * string(s, base=16), a.seed), ",\n")
 function MCTS.node_tag(a::AST.ASTAction)
     if a == action # selected optimal action
         return "—[$(seeds2string(a))]—"
@@ -29,8 +29,8 @@ end
 """
 Visualize MCTS tree structure for AST MDP.
 """
-function visualize(mdp::AST.ASTMDP, planner::MCTS.DPWPlanner)
-    tree = playout(mdp, planner; return_tree=true)
+function visualize(mdp::AST.ASTMDP, policy::MCTS.DPWPlanner)
+    tree = playout(mdp, policy; return_tree=true)
     d3 = visualize(tree)
 	return d3::D3Tree
 end

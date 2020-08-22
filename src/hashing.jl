@@ -1,4 +1,4 @@
-Base.hash(a::ASTAction) = hash(a.rsg)
+Base.hash(a::ASTAction) = hash(a.seed)
 function Base.hash(A::Vector{ASTAction})
     if length(A) > 0
         h = hash(A[1])
@@ -18,7 +18,7 @@ function Base.hash(s::ASTState)
     return h
 end
 
-Base.:(==)(w::ASTAction,v::ASTAction) = w.rsg == v.rsg
+Base.:(==)(w::ASTAction,v::ASTAction) = w.seed == v.seed
 Base.:(==)(w::ASTState,v::ASTState) = hash(w) == hash(v)
-Base.isequal(w::ASTAction,v::ASTAction) = isequal(w.rsg,v.rsg)
+Base.isequal(w::ASTAction,v::ASTAction) = isequal(w.seed, v.seed)
 Base.isequal(w::ASTState,v::ASTState) = hash(w) == hash(v)

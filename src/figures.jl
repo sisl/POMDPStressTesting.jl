@@ -11,7 +11,7 @@ Stacked figure with metrics over episodes:
     - Cumulative number of failure events
 """
 episodic_figures(mdp::ASTMDP; kwargs...) = episodic_figures(mdp.metrics; kwargs...)
-function episodic_figures(metrics::ASTMetrics; gui=false)
+function episodic_figures(metrics::ASTMetrics; gui::Bool=true, fillstd::Bool=false)
     miss_distances = metrics.miss_distance
     max_iters = length(miss_distances)
 
@@ -31,10 +31,19 @@ function episodic_figures(metrics::ASTMetrics; gui=false)
 
     ax.axhline(y=0, color="black", linestyle="--", linewidth=1.0)
 
-    ax.plot([mean(miss_distances[1:i]) for i in 1:max_iters], color="darkcyan", zorder=2)
-    miss_std_below = [mean(miss_distances[1:i])-std(miss_distances[1:i]) for i in 1:max_iters]
-    miss_std_above = [mean(miss_distances[1:i])+std(miss_distances[1:i]) for i in 1:max_iters]
-    ax.fill_between(1:max_iters, miss_std_below, miss_std_above, color="darkcyan", alpha=0.1)
+    rolling_mean = []
+    d_sum = 0
+    for i in 1:max_iters
+        d_sum += miss_distances[i]
+        push!(rolling_mean, d_sum/i)
+    end
+    # [mean(miss_distances[1:i]) for i in 1:max_iters]
+    ax.plot(rolling_mean, color="darkcyan", zorder=2)
+    if fillstd
+        miss_std_below = [mean(miss_distances[1:i])-std(miss_distances[1:i]) for i in 1:max_iters]
+        miss_std_above = [mean(miss_distances[1:i])+std(miss_distances[1:i]) for i in 1:max_iters]
+        ax.fill_between(1:max_iters, miss_std_below, miss_std_above, color="darkcyan", alpha=0.1)
+    end
 
     ylabel("Miss Distance")
     ax.tick_params(labelbottom=false)
@@ -43,7 +52,15 @@ function episodic_figures(metrics::ASTMetrics; gui=false)
     ax = fig.add_subplot(3,1,2)
     title("Minimum Miss Distance")
     pl0 = ax.axhline(y=0, color="black", linestyle="--", linewidth=1.0)
-    pl1 = ax.plot([minimum(miss_distances[1:i]) for i in 1:max_iters], color="darkcyan", label=L"{AST}_{MCTS}")
+    rolling_min = []
+    current_min = Inf
+    for i in 1:max_iters
+        if miss_distances[i] < current_min
+            current_min = miss_distances[i]
+        end
+        push!(rolling_min, current_min)
+    end
+    pl1 = ax.plot(rolling_min, color="darkcyan", label=L"{AST}_{MCTS}")
     ylabel("Miss Distance")
     handles = [pl0, pl1[1]]
 
@@ -67,10 +84,21 @@ function episodic_figures(metrics::ASTMetrics; gui=false)
     plt.tight_layout()
     fig.subplots_adjust(bottom=0.13) # <-- Change the 0.02 to work for your plot.
 
+    print_metrics(metrics)
+end
 
-    println("First failure: ", findfirst(E), "/", length(E))
-    println("Number of failures: ", sum(E))
-    println("Failure rate: ", sum(E)/length(E))
+
+print_metrics(mdp::ASTMDP) = print_metrics(mdp.metrics)
+function print_metrics(metrics::ASTMetrics)
+    E = metrics.miss_distance .<= 0
+
+    if findfirst(E) === nothing
+        @info "No failures found."
+    else
+        println("First failure: ", findfirst(E), " of ", length(E))
+        println("Number of failures: ", sum(E))
+        println("Failure rate: ", sum(E)/length(E))
+    end
 end
 
 
@@ -80,7 +108,7 @@ Stacked figure with distributions:
     - Log-likelihood distribution
 """
 distribution_figures(mdp::ASTMDP; kwargs...) = distribution_figures(mdp.metrics; kwargs...)
-function distribution_figures(metrics; gui=false)
+function distribution_figures(metrics; gui=true)
     PyPlot.pygui(gui) # Plot with GUI window (if true)
 
     fig = figure(figsize=(6,5))

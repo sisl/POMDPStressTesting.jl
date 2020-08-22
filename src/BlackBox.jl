@@ -6,10 +6,10 @@ module BlackBox
 export
     Simulation,
     initialize!,
+    transition!,
     evaluate!,
-    transition_model!,
+    distance!,
     isevent!,
-    miss_distance!,
     isterminal!
 
 
@@ -26,23 +26,31 @@ abstract type Simulation end
 
 Reset state to its initial state.
 """
-function initialize! end
+function initialize!(sim::Simulation)::Nothing end
 
 
 """
-    evaluate!(sim::BlackBox.Simulation)::Tuple(transition_probability, isevent, miss_distance)
+    evaluate!(sim::BlackBox.Simulation)::Tuple(logprob, isevent, miss_distance)
 
-Evaluate the SUT given some input seed and current state, returns `transition_probability`, `isevent` indication, and `miss_distance`.
+Evaluate the SUT given some input seed and current state, returns `logprob`, `isevent` indication, and `miss_distance`.
 """
-function evaluate! end
+function evaluate!(sim::Simulation)::Tuple{Real, Real, Bool} end
 
 
 """
-    transition_model!(sim::BlackBox.Simulation)::Tuple(logprob, sample)
+    transition!(sim::BlackBox.Simulation)::Real
 
-Return the transition probability and sampled value given the current state [0-1].
+Return the transition log-probability and sampled value given the current state.
 """
-function transition_model! end
+function transition!(sim::Simulation)::Real end
+
+
+"""
+    distance!(sim::BlackBox.Simulation)::Real
+
+Return how close to an event a terminal state was (i.e. some measure of "miss distance" to the event of interest).
+"""
+function distance!(sim::Simulation)::Real end
 
 
 """
@@ -50,15 +58,7 @@ function transition_model! end
 
 Return a boolean indicating if the SUT reached an event of interest.
 """
-function isevent! end
-
-
-"""
-    miss_distance!(sim::BlackBox.Simulation)
-
-Return how close to an event a terminal state was (i.e. some measure of "miss distance" to the event of interest).
-"""
-function miss_distance! end
+function isevent!(sim::Simulation)::Bool end
 
 
 """
@@ -66,7 +66,7 @@ function miss_distance! end
 
 Return an indication that the simulation is in a terminal state.
 """
-function isterminal! end
+function isterminal!(sim::Simulation)::Bool end
 
 
 end # module BlackBox

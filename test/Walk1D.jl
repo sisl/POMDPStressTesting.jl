@@ -1,139 +1,91 @@
-using Revise # DEBUG
-
-# Based on Ritchie Lee's Walk1D in AdaptiveStressTesting.jl examples.
-
 using POMDPStressTesting
 using Distributions
-using Random
-using POMDPs
-using MCTS
-
-## AST formulation
+using Parameters
 
 
-## Black-box system under test
-
-
-mutable struct Walk1DParams
-	startx::Float64 # Starting x-position
-	threshx::Float64 # +- boundary threshold
-	endtime::Int64 # Simulate end time
-	logging::Bool # State history logging indication
-
-	Walk1DParams() = new(1, 10, 20, false)
+@with_kw mutable struct Walk1DParams
+    startx::Float64 = 0 # Starting x-position
+    threshx::Float64 = 10 # +- boundary threshold
+    endtime::Int64 = 30 # Simulate end time
 end
 
 
-mutable struct Walk1DSim <: BlackBox.Simulation
-	p::Walk1DParams # Parameters
-	x::Float64 # x-position
-	t::Int64 # time
-	distribution::Distribution
-	history::Vector{Float64} # Log of history
-
-	Walk1DSim(p::Walk1DParams, σ::Float64) = Walk1DSim(p, Normal(0.0, σ)) # Zero-mean Gaussian
-	Walk1DSim(p::Walk1DParams, distribution::Distribution) = new(p, p.startx, 0, distribution, Float64[])
+# Implement abstract BlackBox.Simulation
+@with_kw mutable struct Walk1DSim <: BlackBox.Simulation
+    params::Walk1DParams = Walk1DParams() # Parameters
+    x::Float64 = 0 # Current x-position
+    t::Int64 = 0 # Current time
+    distribution::Distribution = Normal(0, 1) # Transition model
 end
 
 
 # Override from BlackBox
 function BlackBox.initialize!(sim::Walk1DSim)
-	sim.t = 0
-	sim.x = sim.p.startx
-	empty!(sim.history)
-	if sim.p.logging
-		push!(sim.history, sim.x)
-	end
+    sim.t = 0
+    sim.x = sim.params.startx
 end
 
 
 # Override from BlackBox
-function BlackBox.transition_model!(sim::Walk1DSim)
-	sample = rand(sim.distribution) # Sample value from distribution
-	prob = pdf(sim.distribution, sample) # Get probability of sample
-	return (prob, sample)
+function BlackBox.transition!(sim::Walk1DSim)
+    sim.t += 1 # Keep track of time
+    sample = rand(sim.distribution) # Sample value from distribution
+    logprob = logpdf(sim.distribution, sample) # Get log-probability of sample
+    sim.x += sample # Move agent
+    return logprob::Real
 end
 
 
 # Override from BlackBox
-BlackBox.isevent!(sim::Walk1DSim) = abs(sim.x) >= sim.p.threshx
+BlackBox.distance!(sim::Walk1DSim) = max(sim.params.threshx - abs(sim.x), 0)
 
 
 # Override from BlackBox
-BlackBox.miss_distance!(sim::Walk1DSim) = max(sim.p.threshx - abs(sim.x), 0) # Non-negative
+BlackBox.isevent!(sim::Walk1DSim) = abs(sim.x) >= sim.params.threshx
 
 
 # Override from BlackBox
-BlackBox.isterminal!(sim::Walk1DSim) = BlackBox.isevent!(sim) || sim.t >= sim.p.endtime
+BlackBox.isterminal!(sim::Walk1DSim) = BlackBox.isevent!(sim) || sim.t >= sim.params.endtime
 
 
 # Override from BlackBox
 function BlackBox.evaluate!(sim::Walk1DSim)
-	sim.t += 1
-	(prob::Float64, sample::Float64) = BlackBox.transition_model!(sim)
-	sim.x += sample
-	miss_distance = BlackBox.miss_distance!(sim)
-	if sim.p.logging
-		push!(sim.history, sim.x)
-	end
-	return (prob, BlackBox.isevent!(sim), miss_distance)
+    logprob::Real  = BlackBox.transition!(sim) # Step simulation
+    distance::Real = BlackBox.distance!(sim) # Calculate miss distance
+    event::Bool    = BlackBox.isevent!(sim) # Check event indication
+    return (logprob::Real, distance::Real, event::Bool)
 end
 
 
 function setup_ast()
-	max_steps = 25 # Simulation end-time
-	rsg_length = 2 # Number of unique available random seeds
-	seed = 1 # RNG seed
-	σ = 1.0 # Standard deviation
+    # Create black-box simulation object
+    sim::BlackBox.Simulation = Walk1DSim()
 
-	# Setup black-box specific simulation parameters
-	sim_params::Walk1DParams = Walk1DParams()
-	sim_params.startx = 1.0
-	sim_params.threshx = 10.0
-	sim_params.endtime = max_steps
-	sim_params.logging = true
+    # AST MDP formulation object
+    mdp::ASTMDP = ASTMDP(sim)
+    mdp.params.debug = true # record metrics
+    mdp.params.seed = 1
+    mdp.params.top_k = 10
 
-	# Create black-box simulation object
-	sim::BlackBox.Simulation = Walk1DSim(sim_params, σ)
+    # Hyperparameters for MCTS-PW as the solver
+    solver = MCTSASTSolver(depth=sim.params.endtime,
+                           exploration_constant=10.0,
+                           k_action=0.1,
+                           alpha_action=0.85,
+                           n_iterations=1000)
 
-	# AST specific parameters
-	top_k::Int = 10 # Save top performing paths
-	debug::Bool = true
-	ast_params::AST.Params = AST.Params(max_steps, rsg_length, seed, top_k, debug)
+    policy = solve(solver, mdp)
 
-	# AST MDP formulation object
-	mdp::AST.ASTMDP = AST.ASTMDP(ast_params, sim)
-
-	# @requirements_info MCTSSolver() mdp
-
-	rng = MersenneTwister(seed) # Unused. TODO local vs. global seed (i.e. use this)
-
-	# MCTS with DPW solver parameters
-	# TODO: AST version of this as a wrapper (i.e. sets required parameters)
-	solver = MCTS.DPWSolver(
-			estimate_value=AST.rollout, # TODO: required.
-			depth=max_steps,
-			enable_state_pw=false, # Best practice/required.
-			exploration_constant=10.0,
-			k_action=0.1,
-			alpha_action=0.85,
-			n_iterations=1000,
-			reset_callback=AST.go_to_state, # Custom fork of MCTS.jl
-			tree_in_info=true)#, rng=rng)
-
-	planner = solve(solver, mdp)
-
-	# s = initialstate(mdp, rng) # rng not used
-	# a = action(planner, s)
-
-	# Playback the best path in the tree
-	# AST.playback(mdp, func=sim->sim.x) # TODO: export playback
-
-	# display(sim.history)
-
-	return (planner, mdp, sim)
+    return (policy, mdp, sim)
 end
 
 
-## Example:
-# (planner, mdp, sim) = setup_ast();
+(policy, mdp, sim) = setup_ast()
+
+action_trace = playout(mdp, policy)
+
+final_state = playback(mdp, action_trace, sim->sim.x)
+
+print_metrics(mdp)
+
+nothing # Suppress REPL
