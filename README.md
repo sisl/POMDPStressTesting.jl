@@ -20,7 +20,7 @@ All of these functions can modify the `Simulation` object in place.
 
 See example implementation of the AST interface for the Walk1D problem: [`test/Walk1D.jl`](https://github.com/mossr/POMDPStressTesting.jl/blob/master/test/Walk1D.jl).
 
-With an accompanying descriptive write-up: [`walk1d.pdf`](./test/pdf/walk1d.pdf)
+With an accompanying descriptive write-up: [`walk1d.pdf`](./test/pdf/walk1d.pdf) (created using [TeX.jl](https://github.com/mossr/TeX.jl))
 
 <!-- (https://github.com/mossr/POMDPStressTesting.jl/blob/master/test/walk1d.pdf) -->
 
