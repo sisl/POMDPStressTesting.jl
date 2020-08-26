@@ -28,6 +28,15 @@ using Base.Iterators
 import BSON: @save, @load
 import ProgressMeter: Progress, next!
 
+try
+    using CrossEntropyMethod # TODO: LocalRegistry?
+catch err
+    if err isa ArgumentError
+        error("Please install CrossEntropyMethod.jl fork via:\nusing Pkg; Pkg.add(PackageSpec(url=\"https://github.com/mossr/CrossEntropyMethod.jl.git\"))")
+    end
+end
+
+
 export AST,
        ASTMDP,
        ASTParams,
@@ -53,6 +62,8 @@ export AST,
        reset_metrics!,
 
        MCTSASTSolver,
+       CEMSolver,
+       CEMPlanner,
        RandomSearchSolver,
        RandomSearchPlanner,
        TRPOSolver,
@@ -70,6 +81,7 @@ include(joinpath("visualization", "tree_visualization.jl"))
 include(joinpath("visualization", "figures.jl"))
 
 include(joinpath("solvers", "mcts.jl"))
+include(joinpath("solvers", "cem.jl"))
 include(joinpath("solvers", "random_search.jl"))
 include(joinpath("solvers", "drl", "drl.jl"))
 

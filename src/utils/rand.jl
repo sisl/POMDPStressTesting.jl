@@ -1,5 +1,4 @@
-import Base.rand
-function rand(rng::AbstractRNG, d::GrayBox.Environment)
+function Base.rand(rng::AbstractRNG, d::GrayBox.Environment)
     # Sample from each distribution in the dictionary
     # (similar to Anthoy Corso's CrossEntropyMethod.jl)
     sample = GrayBox.EnvironmentSample()
@@ -12,7 +11,6 @@ function rand(rng::AbstractRNG, d::GrayBox.Environment)
 end
 
 
-import Distributions.logpdf
-function logpdf(sample::GrayBox.EnvironmentSample)
+function Distributions.logpdf(sample::GrayBox.EnvironmentSample)
     sum(sample[k].logprob for k in keys(sample))
 end

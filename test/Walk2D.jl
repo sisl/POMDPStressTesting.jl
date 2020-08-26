@@ -107,18 +107,23 @@ function setup_ast(seed=AST.DEFAULT_SEED; solver=PPOSolver)
 
     # Choose a solver
     if solver == RandomSearchSolver
-        solver = RandomSearchSolver(depth=sim.params.endtime,
-                                    n_iterations=n_iterations)
+        solver = RandomSearchSolver(n_iterations=n_iterations,
+                                    episode_length=sim.params.endtime)
     elseif solver == MCTSASTSolver
-        solver = MCTSASTSolver(depth=sim.params.endtime, # tree depth
+        solver = MCTSASTSolver(n_iterations=n_iterations,
                                exploration_constant=1.0, # UCT exploration
                                k_action=1.0, # action widening
                                alpha_action=0.5, # action widening
-                               n_iterations=n_iterations)
+                               depth=sim.params.endtime) # tree depth (i.e. episode length)
+    elseif solver == CEMSolver
+        solver = CEMSolver(n_iterations=n_iterations,
+                           episode_length=sim.params.endtime)
     elseif solver == TRPOSolver
-        solver = TRPOSolver()
+        solver = TRPOSolver(num_episodes=n_iterations,
+                            episode_length=sim.params.endtime)
     elseif solver == PPOSolver
-        solver = PPOSolver()
+        solver = PPOSolver(num_episodes=n_iterations,
+                           episode_length=sim.params.endtime)
     end
 
     # Get online planner (no work done, yet)

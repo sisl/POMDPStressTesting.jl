@@ -1,6 +1,6 @@
 @with_kw mutable struct RandomSearchSolver
     n_iterations::Int64 = 100
-    depth::Int64 = 10
+    episode_length::Int64 = 10
     show_progress::Bool = true
 end
 
@@ -21,7 +21,7 @@ function POMDPs.action(planner::RandomSearchPlanner, s)
     mdp::ASTMDP = planner.mdp
     sim::GrayBox.Simulation = mdp.sim
     n_iterations::Int64 = planner.solver.n_iterations
-    depth::Int64 = planner.solver.depth
+    depth::Int64 = planner.solver.episode_length
     planner.solver.show_progress ? progress = Progress(n_iterations) : nothing
 
     # Run simulation

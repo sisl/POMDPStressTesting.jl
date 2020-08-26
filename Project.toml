@@ -1,10 +1,11 @@
 name = "POMDPStressTesting"
 uuid = "6fc570d8-62cd-4d35-b113-bbf3c1b8276a"
 authors = ["Robert Moss <mossr@cs.stanford.edu>"]
-version = "0.4.0"
+version = "0.4.1"
 
 [deps]
 BSON = "fbb218c0-5317-5bc6-957e-2ee96dd4b1f0"
+CrossEntropyMethod = "f7e364ee-db6c-46d3-b598-27dc284d9c4d"
 D3Trees = "e3df1716-f71e-5df9-9e2d-98e193103c45"
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"

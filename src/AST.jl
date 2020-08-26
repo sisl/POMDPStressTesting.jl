@@ -130,7 +130,7 @@ end
 """
 Generate next state and reward for AST MDP (handles episodic reward problems). Overridden from `POMDPs.gen` interface.
 """
-function POMDPs.gen(mdp::ASTMDP, s::ASTState, a::ASTAction, rng::AbstractRNG)
+function POMDPs.gen(mdp::ASTMDP, s::ASTState, a::ASTAction, rng::AbstractRNG=Random.GLOBAL_RNG)
     @assert mdp.sim_hash == s.hash
     mdp.t_index += 1
     isa(a, ASTSeedAction) ? set_global_seed(a) : nothing
