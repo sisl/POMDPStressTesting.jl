@@ -1,7 +1,3 @@
-using POMDPPolicies
-using D3Trees
-using MCTS
-
  # Full width cells in Jupyter notebook
 full_width_notebook() = display(HTML("<style>.container { width:100% !important; }</style>"))
 
@@ -16,12 +12,11 @@ function MCTS.node_tag(s::AST.ASTState)
 end
 
 # Display of state nodes.
-seeds2string(a) = join(map(s->"0x" * string(s, base=16), a.seed), ",\n")
-function MCTS.node_tag(a::AST.ASTAction)
+function MCTS.node_tag(a::AST.ASTSeedAction)
     if a == action # selected optimal action
-        return "—[$(seeds2string(a))]—"
+        return "—[$(string(a))]—"
     else
-        return "[$(seeds2string(a))]"
+        return "[$(string(a))]"
     end
 end
 

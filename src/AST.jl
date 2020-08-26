@@ -4,41 +4,45 @@ Provides virtual interface for Adaptive Stress Testing (AST) formulation of MDPs
 module AST
 
 using Random
+using RLInterface
 using Parameters
+using Distributions
 using DataStructures
 using POMDPPolicies
 using POMDPSimulators
 using POMDPs
-using MCTS
 
 export
     BlackBox,
+    GrayBox,
 
     ASTParams,
     ASTMDP,
     ASTState,
     ASTAction,
+    ASTSeedAction,
+    ASTSampleAction,
     ASTMetrics,
+    actiontype,
 
     reward,
     action,
     initialstate,
     isterminal,
+    hash_uint32,
+    reset_metrics!,
 
     playback,
-    playout,
     get_top_path,
-    online_path,
-
-    MCTSASTSolver
-
+    online_path
 
 include("BlackBox.jl")
+include("GrayBox.jl")
 include("ast_types.jl")
-include("seeding.jl")
-include("hashing.jl")
-include("recording.jl")
-include(joinpath("solvers", "mcts.jl"))
+include(joinpath("utils", "rand.jl"))
+include(joinpath("utils", "seeding.jl"))
+include(joinpath("utils", "hashing.jl"))
+include(joinpath("utils", "recording.jl"))
 
 
 
@@ -68,7 +72,7 @@ For epsidic reward problems (i.e. rewards only at the end of an episode), set `m
 """
 function POMDPs.reward(mdp::ASTMDP, logprob::Float64, isevent::Bool, isterminal::Bool, miss_distance::Float64)
     if logprob > 0
-        error("Make sure BlackBox.transition! outputs the log-probability.")
+        error("Make sure GrayBox.transition! outputs the log-probability.")
     end
 
     if mdp.episodic_rewards
@@ -92,7 +96,7 @@ function POMDPs.reward(mdp::ASTMDP, logprob::Float64, isevent::Bool, isterminal:
     end
 
     if !mdp.episodic_rewards || (mdp.episodic_rewards && isterminal) || (mdp.episodic_rewards && mdp.give_intermediate_reward)
-        record(mdp, prob=exp(logprob), logprob=logprob, miss_distance=miss_distance, reward=r)
+        record(mdp, prob=exp(logprob), logprob=logprob, miss_distance=miss_distance, reward=r, event=isevent)
     end
 
     return r
@@ -111,7 +115,12 @@ function POMDPs.initialstate(mdp::ASTMDP, rng::AbstractRNG=Random.GLOBAL_RNG) # 
         mdp.params.seed = mdp.params.reset_seed
     end
 
-    s::ASTState = ASTState(mdp.t_index, ASTAction(mdp.params.seed))
+    if actiontype(mdp) == ASTSeedAction
+        s = ASTState(t_index=mdp.t_index, action=ASTSeedAction(mdp.params.seed))
+    elseif actiontype(mdp) == ASTSampleAction
+        s = ASTState(t_index=mdp.t_index)
+    end
+
     mdp.sim_hash = s.hash
     return s::ASTState
 end
@@ -124,25 +133,36 @@ Generate next state and reward for AST MDP (handles episodic reward problems). O
 function POMDPs.gen(mdp::ASTMDP, s::ASTState, a::ASTAction, rng::AbstractRNG)
     @assert mdp.sim_hash == s.hash
     mdp.t_index += 1
-    set_global_seed(a)
+    isa(a, ASTSeedAction) ? set_global_seed(a) : nothing
     hasproperty(mdp.sim, :actions) ? push!(mdp.sim.actions, a) : nothing
 
     # Step black-box simulation
     if mdp.episodic_rewards
         # Do not evaluate when problem has episodic rewards
-        logprob::Float64 = BlackBox.transition!(mdp.sim)
+        if a isa ASTSeedAction
+            logprob = GrayBox.transition!(mdp.sim)
+        elseif a isa ASTSampleAction
+            logprob = GrayBox.transition!(mdp.sim, a.sample)
+        end
         isevent::Bool = false
         miss_distance::Float64 = NaN
     else
-        (logprob, miss_distance, isevent) = BlackBox.evaluate!(mdp.sim)
+        if a isa ASTSeedAction
+            (logprob, miss_distance, isevent) = BlackBox.evaluate!(mdp.sim)
+        elseif a isa ASTSampleAction
+            (logprob, miss_distance, isevent) = BlackBox.evaluate!(mdp.sim, a.sample)
+        end
     end
 
     # Update state
-    sp = ASTState(mdp.t_index, s, a)
+    sp = ASTState(t_index=mdp.t_index, parent=s, action=a)
     mdp.sim_hash = sp.hash
     sp.terminal = mdp.episodic_rewards ? false : BlackBox.isterminal!(mdp.sim) # termination handled by end-of-rollout
     r::Float64 = reward(mdp, logprob, isevent, sp.terminal, miss_distance)
     sp.q_value = r
+
+    # TODO: Optimize (debug?)
+    record_trace(mdp, action_q_trace(sp)...)
 
     return (sp=sp, r=r)
 end
@@ -169,12 +189,18 @@ POMDPs.discount(mdp::ASTMDP) = mdp.discount
 """
 Randomly select next action, independent of the state.
 """
-function random_action(mdp::ASTMDP)
+random_action(mdp::ASTMDP, ::ASTState) = random_action(mdp)
+function random_action(mdp::ASTMDP{ASTSeedAction})
     # Note, cannot use `rand` as that's controlled by the global seed.
     set_seed!(mdp)
-    return ASTAction(mdp.current_seed)
+    return ASTSeedAction(mdp.current_seed)
 end
-random_action(mdp::ASTMDP, ::ASTState) = random_action(mdp)
+
+function random_action(mdp::ASTMDP{ASTSampleAction})
+    environment::GrayBox.Environment = GrayBox.environment(mdp.sim)
+    sample::GrayBox.EnvironmentSample = rand(environment)
+    return ASTSampleAction(sample)
+end
 
 
 
@@ -183,6 +209,16 @@ Randomly select next action, independent of the state. Overridden from `POMDPs.a
 """
 POMDPs.action(policy::RandomPolicy, s::ASTState) = random_action(policy.problem)
 POMDPs.actions(mdp::ASTMDP) = [random_action(mdp)]
+
+
+
+import Base.rand
+rand(rng::AbstractRNG, s::ASTState) = s
+
+"""
+Used by the RLInterface to interact with deep RL solvers.
+"""
+POMDPs.convert_s(::Type{Vector{Float32}}, s::ASTState, mdp::ASTMDP) = [s.hash]
 
 
 
@@ -200,7 +236,7 @@ function go_to_state(mdp::ASTMDP, target_state::ASTState)
     end
     @assert s == target_state
 
-    record_trace(mdp, actions, R)
+    # record_trace(mdp, actions, R)
 
     return (R, actions)
 end
@@ -265,14 +301,18 @@ function rollout_end(mdp::ASTMDP, s::ASTState, d::Int64; max_depth=-1, feed_gen=
     if d == 0 || isterminal(mdp, s)
         # End-of-rollout evaluations.
 
-        set_global_seed(a)
+        isa(a, ASTSeedAction) ? set_global_seed(a) : nothing
         hasproperty(sim, :actions) ? push!(sim.actions, a) : nothing
 
         # Step black-box simulation
-        (prob::Float64, miss_distance::Float64, isevent::Bool) = BlackBox.evaluate!(sim)
+        if a isa ASTSeedAction
+            (prob::Float64, miss_distance::Float64, isevent::Bool) = BlackBox.evaluate!(sim)
+        elseif a isa ASTSampleAction
+            (prob, miss_distance, isevent) = BlackBox.evaluate!(sim, a.sample)
+        end
 
         # Update state
-        sp = ASTState(mdp.t_index, s, a)
+        sp = ASTState(t_index=mdp.t_index, parent=s, action=a)
         mdp.sim_hash = sp.hash
         sp.terminal = BlackBox.isterminal!(sim)
         r::Float64 = reward(mdp, prob, isevent, sp.terminal, miss_distance)
@@ -303,75 +343,34 @@ end
 
 
 """
-Return optimal action path from MCTS tree (using `info[:tree]` from `(, info) = action_info(...)`).
-"""
-function get_optimal_path(mdp, tree, snode::Int, actions::Vector{ASTAction}; verbose::Bool=false)
-    best_Q = -Inf
-    sanode = 0
-    for child in tree.children[snode]
-        if tree.q[child] > best_Q
-            best_Q = tree.q[child]
-            sanode = child
-        end
-    end
-
-    if verbose
-        print("State = 0x", string(tree.s_labels[snode].hash, base=16), "\t:\t")
-    end
-    if sanode != 0
-        if verbose
-            print("Q = ", tree.q[sanode], "\t:\t")
-            println("Action = ", string(tree.a_labels[sanode]))
-        end
-        push!(actions, tree.a_labels[sanode])
-
-        # Find subsequent maximizing state node
-        best_Q_a = -Inf
-        snode2 = 0
-        for tran in tree.transitions[sanode]
-            if tran[2] > best_Q_a
-                best_Q_a = tran[2]
-                snode2 = tran[1]
-            end
-        end
-
-        if snode2 != 0
-            get_optimal_path(mdp, tree, snode2, actions, verbose=verbose)
-        end
-    else
-        go_to_state(mdp, tree.s_labels[snode])
-        if verbose
-            if BlackBox.isevent!(mdp.sim)
-                println("Event.")
-            else
-                println("End of tree.")
-            end
-        end
-    end
-
-    return actions::Vector{ASTAction}
-end
-get_optimal_path(mdp, tree, state, actions::Vector{ASTAction}=ASTAction[]; kwargs...) = get_optimal_path(mdp, tree, tree.s_lookup[state], actions; kwargs...)
-
-
-
-"""
 Play back a given action trace from the `initialstate` of the MDP.
 """
-function playback(mdp::ASTMDP, actions::Vector{ASTAction}, func=nothing; verbose=true)
+playback(mdp::ASTMDP, actions::Nothing, func=nothing; kwargs...) = @warn("Action trace is `nothing`, please set mdp.params.top_k > 0.")
+function playback(mdp::ASTMDP, actions::Vector{ASTAction}, func=nothing; verbose=true, return_trace::Bool=false)
     rng = Random.GLOBAL_RNG # Not used.
     s = initialstate(mdp, rng)
     BlackBox.initialize!(mdp.sim)
+    trace = []
+    function trace_and_show(func)
+        single_step = func(mdp.sim)
+        push!(trace, single_step)
+        println(single_step)
+    end
     display_trace::Bool = verbose && !isnothing(func)
-    display_trace ? @show(func(mdp.sim)) : nothing
+    display_trace ? trace_and_show(func) : nothing
 
     for a in actions
+        isnothing(func) && verbose ? println(string(a)) : nothing
         (sp, r) = @gen(:sp, :r)(mdp, s, a, rng)
         s = sp
-        display_trace ? @show(func(mdp.sim)) : nothing
+        display_trace ? trace_and_show(func) : nothing
     end
 
-    return s::ASTState # Returns final state
+    if return_trace
+        return trace::Vector # Returns trace output by `func`
+    else
+        return s::ASTState # Returns final state
+    end
 end
 
 
@@ -379,26 +378,27 @@ end
 """
 Follow MCTS optimal path online calling `action` after each selected state.
 """
-function online_path(mdp::MDP, policy::Policy, printstep=(sim, a)->println("Action: ", string(a));
+function online_path(mdp::MDP, planner::Policy, printstep=(sim, a)->println("Action: ", string(a));
                      verbose::Bool=false)
     s = initialstate(mdp, Random.GLOBAL_RNG)
     BlackBox.initialize!(mdp.sim)
 
     # First step
-    a = action(policy, s)
+    a = action(planner, s)
     actions = ASTAction[a]
     verbose ? printstep(mdp.sim, a) : nothing
     (s, r) = @gen(:sp, :r)(mdp, s, a, Random.GLOBAL_RNG)
 
     while !BlackBox.isterminal!(mdp.sim)
-        a = action(policy, s)
+        a = action(planner, s)
         push!(actions, a)
         verbose ? printstep(mdp.sim, a) : nothing
         (s, r) = @gen(:sp, :r)(mdp, s, a, Random.GLOBAL_RNG)
     end
 
     # Last step: last action is NULL.
-    verbose ? printstep(mdp.sim, ASTAction()) : nothing
+    ActionType::Type{ASTAction} = actiontype(mdp)
+    verbose ? printstep(mdp.sim, ActionType()) : nothing
 
     if BlackBox.isevent!(mdp.sim)
         @info "Event found!"
@@ -456,18 +456,27 @@ end
 
 
 """
-    Play out the optimal path given an MDP and a policy.
-
-    This is the main entry function to get a full failure trajectory from the policy.
+Trace up the tree to get all ancestor actions and summed Q-values.
 """
-function playout(mdp, policy::DPWPlanner; return_tree::Bool=false)
-    initstate = initialstate(mdp)
-    tree = MCTS.action_info(policy, initstate, tree_in_info=true, show_progress=true)[2][:tree] # this runs MCTS
-    action_path::Vector = get_optimal_path(mdp, tree, initstate, verbose=true)
+function action_q_trace(s::ASTState)
+    actions::Vector{ASTAction} = ASTAction[]
+    q_value::Float64 = s.q_value
 
-    return return_tree ? tree : action_path
+    # Trace up the tree
+    while !isnothing(s.parent)
+        prepend!(actions, [s.action])
+        q_value += s.parent.q_value
+        s = s.parent
+    end
+
+    return actions::Vector, q_value::Float64
 end
 
+
+
+function reset_metrics!(mdp::ASTMDP)
+    mdp.metrics = ASTMetrics()
+end
 
 
 end  # module AST

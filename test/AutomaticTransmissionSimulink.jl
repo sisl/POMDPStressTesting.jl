@@ -19,8 +19,8 @@ using MATLAB
 end
 
 
-# Implement abstract BlackBox.Simulation
-@with_kw mutable struct ATSim <: BlackBox.Simulation
+# Implement abstract GrayBox.Simulation
+@with_kw mutable struct ATSim <: GrayBox.Simulation
     params::ATParams = ATParams() # Parameters
     action_matrix::Matrix{Float64} = Matrix{Float64}(undef, 0, 3) # Set of actions (note, Float64 not Real to allow MATLAB to convert)
     t::Real = 0 # Current time
@@ -29,25 +29,8 @@ end
 end
 
 
-# Override from BlackBox
-function BlackBox.initialize!(sim::ATSim)
-    sim.t = 0 # Reset current simulation time
-    sim.action_matrix = Matrix{Float64}(undef, 0, 3) # Reset action set
-    sim.tout = []
-    sim.yout = []
-
-    startime, endtime = sim.params.time_range
-    times = startime:endtime
-    @mput endtime # pass to MATLAB
-    @mput times # pass to MATLAB
-
-    # Load Simulink model in MATLAB
-    eval_string("load_system('$(sim.params.model)')")
-end
-
-
-# Override from BlackBox
-function BlackBox.transition!(sim::ATSim)
+# Override from GrayBox
+function GrayBox.transition!(sim::ATSim)
     # New time from "remaining" time (i.e. starting at sim.t)
     dist_time::Uniform = Uniform(sim.t, sim.params.time_range[end])
     dist_throttle::Uniform = Uniform(sim.params.throttle_range...)
@@ -65,6 +48,23 @@ function BlackBox.transition!(sim::ATSim)
                     logpdf(dist_throttle, sampled_throttle) +
                     logpdf(dist_brake, sampled_brake)
     return logprob::Real
+end
+
+
+# Override from BlackBox
+function BlackBox.initialize!(sim::ATSim)
+    sim.t = 0 # Reset current simulation time
+    sim.action_matrix = Matrix{Float64}(undef, 0, 3) # Reset action set
+    sim.tout = []
+    sim.yout = []
+
+    startime, endtime = sim.params.time_range
+    times = startime:endtime
+    @mput endtime # pass to MATLAB
+    @mput times # pass to MATLAB
+
+    # Load Simulink model in MATLAB
+    eval_string("load_system('$(sim.params.model)')")
 end
 
 
@@ -107,8 +107,8 @@ end
 
 
 function setup_ast()
-    # Create black-box simulation object
-    sim::BlackBox.Simulation = ATSim()
+    # Create gray-box simulation object
+    sim::GrayBox.Simulation = ATSim()
 
     # AST MDP formulation object
     mdp::ASTMDP = ASTMDP(sim)

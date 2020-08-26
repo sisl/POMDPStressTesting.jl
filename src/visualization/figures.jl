@@ -1,7 +1,3 @@
-using PyPlot
-using Seaborn # for kernel density
-using Statistics
-
 import .AST: ASTMDP, ASTMetrics
 
 """
@@ -69,7 +65,7 @@ function episodic_figures(metrics::ASTMetrics; gui::Bool=true, fillstd::Bool=fal
 
     ## Plot 3: Cumulative failures
     ax = fig.add_subplot(3,1,3)
-    E = metrics.miss_distance .<= 0
+    E = metrics.event
     max_iters = length(E)
 
     title("Cumulative Number of Failure Events")
@@ -87,19 +83,6 @@ function episodic_figures(metrics::ASTMetrics; gui::Bool=true, fillstd::Bool=fal
     print_metrics(metrics)
 end
 
-
-print_metrics(mdp::ASTMDP) = print_metrics(mdp.metrics)
-function print_metrics(metrics::ASTMetrics)
-    E = metrics.miss_distance .<= 0
-
-    if findfirst(E) === nothing
-        @info "No failures found."
-    else
-        println("First failure: ", findfirst(E), " of ", length(E))
-        println("Number of failures: ", sum(E))
-        println("Failure rate: ", sum(E)/length(E))
-    end
-end
 
 
 """
@@ -120,9 +103,8 @@ function distribution_figures(metrics; gui=true)
 
     ## Plot 1: Miss distanace distribution
     subplot(2,1,1)
-    n_bins = 20
 
-    Seaborn.kdeplot(-metrics.miss_distance, bw=0.1, color="darkcyan", shade=true, cut=2000)
+    Seaborn.kdeplot(-metrics.miss_distance, bw=0.1, color="darkcyan", shade=true, cut=200) # cut=2000
     plt.axvline(x=0, color="black", linestyle="--", linewidth=1.0)
     xl = plt.xlim()
     plt.xlim([xl[1], xl[2]])
@@ -137,7 +119,7 @@ function distribution_figures(metrics; gui=true)
 
     ## Plot 2: Log-likelihood distribution
     subplot(2,1,2)
-    Seaborn.kdeplot(metrics.logprob[findall(metrics.miss_distance .<= 0)], bw=0.1, color="darkcyan", shade=true, cut=100)
+    Seaborn.kdeplot(metrics.logprob[findall(metrics.event)], bw=0.1, color="darkcyan", shade=true, cut=100)
     legend([L"{\rm AST}_{\rm MCTS}"], loc="upper left")
     title("Log-Likelihood Distribution: Failure Events")
     xlabel(L"\log p")

@@ -9,9 +9,10 @@ function record(mdp::ASTMDP, sym::Symbol, val)
     end
 end
 
-function record(mdp::ASTMDP; prob=1, logprob=exp(prob), miss_distance=Inf, reward=-Inf)
+function record(mdp::ASTMDP; prob=1, logprob=exp(prob), miss_distance=Inf, reward=-Inf, event=false)
     AST.record(mdp, :prob, prob)
     AST.record(mdp, :logprob, logprob)
     AST.record(mdp, :miss_distance, miss_distance)
     AST.record(mdp, :reward, reward)
+    AST.record(mdp, :event, event)
 end

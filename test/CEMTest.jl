@@ -53,14 +53,14 @@ function cross_entropy_method(f, P; m=10, m_elite=5, k_max=10, ϵ=1e-9, plot=tru
             @warn(err); @show k
         end
 
-#=
+        #=
         if norm(μ - mean(P)) < ϵ
             println("Converged ($k)")
             break
         else
             # println(norm(μ - mean(P)))
         end
-=#
+        =#
         μ = mean(P)
     end
 
