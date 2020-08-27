@@ -63,7 +63,6 @@ header-includes: |
     columns=fullflexible,
     keepspaces=true,
     numbers=none,
-    inputencoding=ansinew,
 }
 
 
@@ -82,7 +81,7 @@ Recall that reinforcement learning aims to maximize the discounted sum of expect
 A gray-box simulation environment steps the simulation and outputs the state-transition probabilities, and the black-box system under test is evaluated in the simulator and outputs an event indication and the real-valued distance metric.
 To apply AST to a general black-box system, a user has to implement the following interface:
 
-\begin{lstlisting}
+\begin{lstlisting}[language=Julia]
 # GrayBox simulator and environment
 abstract type GrayBox.Simulation end
 function GrayBox.environment(sim::Simulation)::GrayBox.Environment end
