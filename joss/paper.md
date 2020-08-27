@@ -16,7 +16,6 @@ date: 26 August 2020
 bibliography: paper.bib
 header-includes: |
     \usepackage{listings}
-    \usepackage[framemethod=tikz]{mdframed}
     \usepackage{textcomp}
 ---
 \newcommand{\todo}[1]{{\color{magenta}\textbf{TODO:}} #1}
@@ -48,7 +47,12 @@ header-includes: |
     keywordstyle     = [3]{\color[HTML]{0000FF}},
     stringstyle      = \color[HTML]{F5615C},
     commentstyle     = \color[HTML]{AAAAAA},
-    frame=none,
+    rulecolor        = \color[HTML]{000000},
+    frame=lines,
+    xleftmargin=10pt,
+    framexleftmargin=10pt,
+    framextopmargin=4pt,
+    framexbottommargin=4pt,
     tabsize=4,
     captionpos=b,
     breaklines=true,
@@ -78,7 +82,6 @@ Recall that reinforcement learning aims to maximize the discounted sum of expect
 A gray-box simulation environment steps the simulation and outputs the state-transition probabilities, and the black-box system under test is evaluated in the simulator and outputs an event indication and the real-valued distance metric.
 To apply AST to a general black-box system, a user has to implement the following interface:
 
-\begin{mdframed}[backgroundcolor=black!5,rightline=false,leftline=false,innerbottommargin=0pt,skipabove=8pt]
 \begin{lstlisting}
 # GrayBox simulator and environment
 abstract type GrayBox.Simulation end
@@ -92,7 +95,6 @@ function BlackBox.distance!(sim::Simulation)::Real end
 function BlackBox.isevent!(sim::Simulation)::Bool end
 function BlackBox.isterminal!(sim::Simulation)::Bool end
 \end{lstlisting}
-\end{mdframed}
 
 The simulator stores simulation-specific parameters and the environment stores a collection of probability distributions that define the state-transitions (e.g., Gaussian noise models, uniform control inputs, etc.).
 Two types of AST action modes are provided to the user: random seed actions or directly sampled actions.
