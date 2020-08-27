@@ -16,11 +16,7 @@ date: 26 August 2020
 bibliography: paper.bib
 header-includes: |
     \usepackage{listings}
-    \usepackage{textcomp}
 ---
-\newcommand{\todo}[1]{{\color{magenta}\textbf{TODO:}} #1}
-
-
 \lstdefinelanguage{Julia}
   {keywords=[3]{initialize!,transition!,evaluate!,distance!,isevent!,isterminal!,environment},
    keywords=[2]{Nothing, Tuple, Real, Bool, Simulation, BlackBox, GrayBox, Sampleable, Environment},
