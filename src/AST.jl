@@ -62,6 +62,7 @@ Reward function for the AST formulation. Defaults to:
 
 
 For epsidic reward problems (i.e. rewards only at the end of an episode), set `mdp.episodic_rewards` to get:
+
     (log(p) - d)*R_E    if isterminal and isevent (1)
     log(p) - d          if isterminal and !isevent (2)
     0                   otherwise (3)
@@ -290,8 +291,11 @@ end
 Rollout to only execute SUT at end (`p` accounts for probabilities generated outside the rollout)
 
 User defined:
+
 `feed_gen` Function to feed best action, replaces call to `gen` when feeding
+
 `feed_type` Indicate when to feed best action. Either at the start of the rollout `:start`, or mid-rollout `:mid`
+
 `best_callback` Callback function to record best miss distance or reward for later feeding during rollout
 """
 function rollout_end(mdp::ASTMDP, s::ASTState, d::Int64; max_depth=-1, feed_gen=missing, feed_type::Symbol=:none, best_callback::Function=(sm,r)->sm)

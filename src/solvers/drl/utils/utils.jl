@@ -61,9 +61,9 @@ end
 
 
 """
-Obtain the gradient vector product. Intermediate utility function, calculates Σ∇D_kl*x
+Obtain the gradient vector product. Intermediate utility function, calculates `Σ∇D_kl*x`
 
-x : Variable to be estimated using conjugate gradient (Hx = g); (NUM_PARAMS,1)
+`x` : Variable to be estimated using conjugate gradient `(Hx = g); (NUM_PARAMS,1)`
 """
 function gvp(policy, states, kl_vars, x)
     model_params = get_policy_params(policy)
@@ -75,10 +75,10 @@ end
 
 
 """
-Computes the Hessian vector product
-Hessian is that of the kl divergence between the old and the new policies wrt the policy parameters
+Computes the Hessian vector product.
+Hessian is that of the kl divergence between the old and the new policies w.r.t. the policy parameters.
 
-Returns : Hx; H = ∇²D_kl
+Returns : `Hx; H = ∇²D_kl`
 """
 function Hvp(policy, states, kl_vars, x; damping_coeff=0.1)
     model_params = get_policy_params(policy)
@@ -88,9 +88,11 @@ end
 
 
 """
-b : Array of shape (NUM_PARAMS,1)
+Compute the conjugate gradient.
 
-Solves x for Hx = b
+`b` : Array of shape `(NUM_PARAMS,1)`
+
+Solves `x` for `Hx = b`
 """
 function conjugate_gradients(policy, states, kl_vars, b, nsteps=10, err=1e-10)
     x = zeros(size(b))
@@ -123,11 +125,11 @@ end
 
 
 """
-Flattens out the gradients and concatenates them
+Flattens out the gradients and concatenates them.
 
-models : An array of models whose parameter gradients are to be falttened
+`models` : An array of models whose parameter `gradients` are to be falttened.
 
-Returns : Tracker Array of shape (NUM_PARAMS,1)
+Returns : Tracked Array of shape `(NUM_PARAMS,1)`
 """
 function get_flat_grads(gradients, models)
 
@@ -151,14 +153,14 @@ function get_flat_grads(gradients, models)
 end
 
 
+"""
+Flattens out the parameters and concatenates them.
+
+`models` : An array of models whose parameters are to be flattened
+
+Returns : Tracked Array of shape `(NUM_PARAMS,1)`
+"""
 function get_flat_params(models)
-    """
-    Flattens out the parameters and concatenates them
-
-    models : An array of models whose parameters are to be falttened
-
-    Returns : Tracker Array of shape (NUM_PARAMS,1)
-    """
 
     flat_params = []
 
@@ -180,13 +182,14 @@ function get_flat_params(models)
 end
 
 
-function set_flat_params!(parameters, models)
-    """
-    Sets values of `parameters` to the `model`
+"""
+Sets values of `parameters` to the `model`.
 
-    parameters : flattened out array of model parameters
-    models : an array of models whose parameters are to be set
-    """
+`parameters` : flattened out array of model parameters.
+
+`models` : an array of models whose parameters are to be set.
+"""
+function set_flat_params!(parameters, models)
     ptr = 1
 
     function assign!(p)

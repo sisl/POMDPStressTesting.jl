@@ -131,8 +131,10 @@ entropy(policy::DiagonalGaussianPolicy, states::Array) = 0.5 + 0.5 * log(2π) .+
 
 """
 kl_params:
-    - old_log_probs : CategoricalPolicy
-    - Array([μ, logΣ]) : DiagonalGaussianPolicy
+
+`old_log_probs` : CategoricalPolicy
+
+`Array([μ, logΣ])` : DiagonalGaussianPolicy
 """
 function kl_divergence(policy::CategoricalPolicy, kl_params, states::Array)
     old_log_probs = hcat(cat(kl_params..., dims=1)...)
