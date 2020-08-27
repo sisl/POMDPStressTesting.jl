@@ -27,9 +27,6 @@ header-includes: |
    morestring=[s]{"}{"},
    morestring=[m]{'}{'},
    alsoletter=!?,
-   literate={,}{{\color[HTML]{0F6FA3},}}1
-            {\{}{{\color[HTML]{0F6FA3}\{}}1
-            {\}}{{\color[HTML]{0F6FA3}\}}}1
 }
 
 \lstset{
