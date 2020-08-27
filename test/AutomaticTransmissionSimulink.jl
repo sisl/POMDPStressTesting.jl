@@ -82,7 +82,7 @@ BlackBox.isterminal!(sim::ATSim) = BlackBox.isevent!(sim) || size(sim.action_mat
 
 # Override from BlackBox
 function BlackBox.evaluate!(sim::ATSim)
-    logprob::Real  = BlackBox.transition!(sim) # Step simulation
+    logprob::Real  = GrayBox.transition!(sim) # Step simulation
 
     x = sim.action_matrix # Matrix (not array of arrays)
     @mput x # Pass to MATLAB
