@@ -1,5 +1,5 @@
 # Wrapper: AST version of this the MCTS solver (i.e. sets required parameters)
-function MCTSASTSolver(; kwargs...)
+function MCTSPWSolver(; kwargs...)
     try
         return MCTS.DPWSolver(; estimate_value=AST.rollout, # required.
                                 enable_state_pw=false, # required.

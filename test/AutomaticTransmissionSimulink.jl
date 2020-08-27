@@ -117,11 +117,11 @@ function setup_ast()
     mdp.params.top_k = 10
 
     # Hyperparameters for MCTS-PW as the solver
-    solver = MCTSASTSolver(depth=sim.params.time_range[end],
-                           exploration_constant=10.0,
-                           k_action=0.1,
-                           alpha_action=0.85,
-                           n_iterations=20)
+    solver = MCTSPWSolver(depth=sim.params.time_range[end],
+                          exploration_constant=10.0,
+                          k_action=0.1,
+                          alpha_action=0.85,
+                          n_iterations=20)
 
     policy = solve(solver, mdp)
 

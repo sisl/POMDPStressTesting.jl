@@ -61,7 +61,7 @@ export AST,
        print_metrics,
        reset_metrics!,
 
-       MCTSASTSolver,
+       MCTSPWSolver,
        CEMSolver,
        CEMPlanner,
        RandomSearchSolver,

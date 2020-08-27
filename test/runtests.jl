@@ -8,7 +8,7 @@ cd(testdir)
     include("Walk1D.jl")
     true
 end
-@test begin @info(MCTSASTSolver); (mdp, action_trace, failure_rate) = run_ast(solver=MCTSASTSolver); true end
+@test begin @info(MCTSPWSolver); (mdp, action_trace, failure_rate) = run_ast(solver=MCTSPWSolver); true end
 @test begin @info(CEMSolver); (mdp, action_trace, failure_rate) = run_ast(solver=CEMSolver); true end
 @test begin @info(PPOSolver); (mdp, action_trace, failure_rate) = run_ast(solver=PPOSolver); true end
 @test begin @info(TRPOSolver); (mdp, action_trace, failure_rate) = run_ast(solver=TRPOSolver); true end
@@ -19,7 +19,7 @@ end
     include("Walk2D.jl")
     true
 end
-@test begin @info(MCTSASTSolver); (mdp, action_trace, failure_rate) = run_ast(solver=MCTSASTSolver); true end
+@test begin @info(MCTSPWSolver); (mdp, action_trace, failure_rate) = run_ast(solver=MCTSPWSolver); true end
 @test begin @info(CEMSolver); (mdp, action_trace, failure_rate) = run_ast(solver=CEMSolver); true end
 @test begin @info(PPOSolver); (mdp, action_trace, failure_rate) = run_ast(solver=PPOSolver); true end
 @test begin @info(TRPOSolver); (mdp, action_trace, failure_rate) = run_ast(solver=TRPOSolver); true end

@@ -109,12 +109,12 @@ function setup_ast(seed=AST.DEFAULT_SEED; solver=PPOSolver)
     if solver == RandomSearchSolver
         solver = RandomSearchSolver(n_iterations=n_iterations,
                                     episode_length=sim.params.endtime)
-    elseif solver == MCTSASTSolver
-        solver = MCTSASTSolver(n_iterations=n_iterations,
-                               exploration_constant=1.0, # UCT exploration
-                               k_action=1.0, # action widening
-                               alpha_action=0.5, # action widening
-                               depth=sim.params.endtime) # tree depth (i.e. episode length)
+    elseif solver == MCTSPWSolver
+        solver = MCTSPWSolver(n_iterations=n_iterations,
+                              exploration_constant=1.0, # UCT exploration
+                              k_action=1.0, # action widening
+                              alpha_action=0.5, # action widening
+                              depth=sim.params.endtime) # tree depth (i.e. episode length)
     elseif solver == CEMSolver
         solver = CEMSolver(n_iterations=n_iterations,
                            episode_length=sim.params.endtime)
