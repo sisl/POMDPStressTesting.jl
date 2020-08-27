@@ -17,19 +17,19 @@ bibliography: paper.bib
 header-includes: |
     \usepackage{listings}
 ---
-\lstdefinelanguage{Julia}
-  {keywords=[3]{initialize!, transition!, evaluate!, distance!, isevent!, isterminal!, environment},
-   keywords=[2]{Nothing, Tuple, Real, Bool, Simulation, BlackBox, GrayBox, Sampleable, Environment},
-   keywords=[1]{function, abstract, type, end},
-   sensitive=true,
-   morecomment=[l]\#,
-   morecomment=[n]{\#=}{=\#},
-   morestring=[s]{"}{"},
-   morestring=[m]{'}{'},
-   alsoletter=!?,
-   literate={,}{{\color[HTML]{0F6FA3},}}1
-            {\{}{{\color[HTML]{0F6FA3}\{}}1
-            {\}}{{\color[HTML]{0F6FA3}\}}}1
+\lstdefinelanguage{Julia}{
+    keywords=[3]{initialize!, transition!, evaluate!, distance!, isevent!, isterminal!, environment},
+    keywords=[2]{Nothing, Tuple, Real, Bool, Simulation, BlackBox, GrayBox, Sampleable, Environment},
+    keywords=[1]{function, abstract, type, end},
+    sensitive=true,
+    morecomment=[l]{\#},
+    morecomment=[n]{\#=}{=\#},
+    morestring=[s]{"}{"},
+    morestring=[m]{'}{'},
+    alsoletter=!?,
+    literate={,}{{\color[HTML]{0F6FA3},}}1
+             {\{}{{\color[HTML]{0F6FA3}\{}}1
+             {\}}{{\color[HTML]{0F6FA3}\}}}1
 }
 
 # Summary
