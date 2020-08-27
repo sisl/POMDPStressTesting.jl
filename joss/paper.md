@@ -100,11 +100,11 @@ As an example, the functions in the above interface can either be implemented di
 We provide a benchmark example often used in the falsification literature [@at_simulink] which uses a Simulink$^\text{\textregistered}$ automatic transmission model as the black-box system and selects throttle and brake control inputs as part of the environment.
 Typically, implementing the \textsc{Distance} and \textsc{IsEvent} functions rely solely on the output of the black-box system under test, thus keeping in accordance with the black-box formulation.
 
-Our package builds off work originally done in the AdaptiveStressTesting.jl package, but POMDPStressTesting.jl adheres to the interface defined by the POMDPs.jl package and provides different action modes and solver types.
+Our package builds off work originally done in the AdaptiveStressTesting.jl package, but POMDPStressTesting.jl adheres to the interface defined by POMDPs.jl and provides different action modes and solver types.
 Related falsification tools (i.e. tools that do not include most-likely failure analysis) are \textsc{S-TaLiRo} [@staliro], Breach [@breach], \textsc{Rrt-Rex} [@rrtrex], and \textsc{FalStar} [@falstar].
 These packages use a combination of optimization, path planning, and reinforcement learning techniques to solve the falsification problem.
 The tool closely related to POMDPStressTesting.jl is the AST Toolbox in Python [@ast_av], which wraps around the gym reinforcement learning environment [@gym].
-The author has contributed to the AST Toolbox and found the need to create a similar package in Julia for better performance and to interface with the POMDPs.jl ecosystem in pure Julia.
+The author has contributed to the AST Toolbox and found the need to create a similar package in pure Julia for better performance and to interface with the POMDPs.jl ecosystem.
 
 
 # Research and Industrial Usage
