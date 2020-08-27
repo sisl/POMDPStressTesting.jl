@@ -131,24 +131,24 @@ function setup_ast(seed=0)
     # Get online planner (no work done, yet)
     planner = solve(solver, mdp)
 
-    return (planner, mdp::ASTMDP)
+    return planner
 end
 
 
 @tex T"""After setup, we \textit{playout} the planner and output an action trace of the best trajectory.""" ->
 begin
-    (planner, mdp) = setup_ast()
-    action_trace = playout(mdp, planner)
+    planner = setup_ast()
+    action_trace = playout(planner)
 end
 # @tex T"""Then \textit{playout} the planner and output an action trace of the best trajectory.""" ->
 
 
 @tex T"""We can also \textit{playback} specific trajectories and print intermediate $x$-values.""" ->
-final_state = playback(mdp, action_trace, sim->sim.x)
+final_state = playback(planner, action_trace, sim->sim.x)
 
 
 @tex T"""Finally, we can print metrics associated with the AST run for further analysis.""" ->
-failure_rate = print_metrics(mdp)
+failure_rate = print_metrics(planner)
 
 
 @tex T"""\section{Solvers}

@@ -121,20 +121,20 @@ function setup_ast(seed=AST.DEFAULT_SEED; solver=MCTSPWSolver)
     # Get online planner (no work done, yet)
     planner = solve(solver, mdp)
 
-    return (planner, mdp::ASTMDP)
+    return planner
 end
 
 
 function run_ast(seed=AST.DEFAULT_SEED; kwargs...)
-    (planner, mdp) = setup_ast(seed; kwargs...)
+    planner = setup_ast(seed; kwargs...)
 
-    action_trace::Vector{ASTAction} = playout(mdp, planner)
-    final_state::ASTState = playback(mdp, action_trace, sim->sim.x)
-    failure_rate::Float64 = print_metrics(mdp)
+    action_trace::Vector{ASTAction} = playout(planner)
+    final_state::ASTState = playback(planner, action_trace, sim->sim.x)
+    failure_rate::Float64 = print_metrics(planner)
 
-    return mdp::ASTMDP, action_trace::Vector{ASTAction}, failure_rate::Float64
+    return planner, action_trace::Vector{ASTAction}, failure_rate::Float64
 end
 
-(mdp, action_trace, failure_rate) = run_ast()
+(planner, action_trace, failure_rate) = run_ast()
 
 nothing # Suppress REPL

@@ -350,6 +350,7 @@ end
 Play back a given action trace from the `initialstate` of the MDP.
 """
 playback(mdp::ASTMDP, actions::Nothing, func=nothing; kwargs...) = @warn("Action trace is `nothing`, please set mdp.params.top_k > 0.")
+playback(planner, actions::Vector{ASTAction}, func=nothing; kwargs...) = playback(planner.mdp, actions, func; kwargs...)
 function playback(mdp::ASTMDP, actions::Vector{ASTAction}, func=nothing; verbose=true, return_trace::Bool=false)
     rng = Random.GLOBAL_RNG # Not used.
     s = initialstate(mdp, rng)

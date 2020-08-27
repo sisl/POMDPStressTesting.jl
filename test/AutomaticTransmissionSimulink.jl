@@ -123,18 +123,15 @@ function setup_ast()
                           alpha_action=0.85,
                           n_iterations=20)
 
-    policy = solve(solver, mdp)
+    planner = solve(solver, mdp)
 
-    return (policy, mdp, sim)
+    return planner
 end
 
+planner = setup_ast()
+action_trace = playout(planner)
+final_state = playback(planner, action_trace)
 
-(policy, mdp, sim) = setup_ast()
-
-action_trace = playout(mdp, policy)
-
-final_state = playback(mdp, action_trace)
-
-print_metrics(mdp)
+print_metrics(planner)
 
 nothing # Suppress REPL

@@ -1,5 +1,6 @@
 import .AST: ASTMDP, ASTMetrics
 
+print_metrics(planner) = print_metrics(planner.mdp.metrics)
 print_metrics(mdp::ASTMDP) = print_metrics(mdp.metrics)
 function print_metrics(metrics::ASTMetrics)
     E = metrics.event

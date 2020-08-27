@@ -41,7 +41,8 @@ end
 
 # Playout planner from initial AST state.
 # Pass back best action trace.
-function playout(mdp::ASTMDP, planner::RandomSearchPlanner)
+function playout(planner::RandomSearchPlanner)
+    mdp::ASTMDP = planner.mdp
     Random.seed!(mdp.params.seed) # Determinism
     s = AST.initialstate(mdp)
     return action(planner, s)
