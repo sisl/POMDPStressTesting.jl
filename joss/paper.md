@@ -32,6 +32,35 @@ header-includes: |
              {\}}{{\color[HTML]{0F6FA3}\}}}1
 }
 
+\lstset{
+    language         = Julia,
+    backgroundcolor  = \color[HTML]{F2F2F2},
+    basicstyle       = \small\ttfamily\color[HTML]{19177C},
+    numberstyle      = \ttfamily\scriptsize\color[HTML]{7F7F7F},
+    keywordstyle     = [1]{\bfseries\color[HTML]{1BA1EA}},
+    keywordstyle     = [2]{\color[HTML]{0F6FA3}},
+    keywordstyle     = [3]{\color[HTML]{0000FF}},
+    stringstyle      = \color[HTML]{F5615C},
+    commentstyle     = \color[HTML]{AAAAAA},
+    rulecolor        = \color[HTML]{000000},
+    frame=lines,
+    xleftmargin=10pt,
+    framexleftmargin=10pt,
+    framextopmargin=4pt,
+    framexbottommargin=4pt,
+    tabsize=4,
+    captionpos=b,
+    breaklines=true,
+    breakatwhitespace=false,
+    showstringspaces=false,
+    showspaces=false,
+    showtabs=false,
+    columns=fullflexible,
+    keepspaces=true,
+    numbers=none,
+}
+
+
 # Summary
 \href{https://github.com/sisl/POMDPStressTesting.jl}{POMDPStressTesting.jl} is a package that uses reinforcement learning and stochastic optimization to find likely failures in black-box systems through a technique called adaptive stress testing [@ast].
 Adaptive stress testing (AST) has been used to find failures in safety-critical systems such as aircraft collision avoidance [@ast_acasx], flight management systems [@ast_fms], and autonomous vehicles [@ast_av].
@@ -47,7 +76,19 @@ Recall that reinforcement learning aims to maximize the discounted sum of expect
 A gray-box simulation environment steps the simulation and outputs the state-transition probabilities, and the black-box system under test is evaluated in the simulator and outputs an event indication and the real-valued distance metric.
 To apply AST to a general black-box system, a user has to implement the following interface:
 
+\begin{lstlisting}[language=Julia]
+# GrayBox simulator and environment
+abstract type GrayBox.Simulation end
+function GrayBox.environment(sim::Simulation)::GrayBox.Environment end
+function GrayBox.transition!(sim::Simulation)::Real end
 
+# BlackBox.interface(input::InputType)::OutputType
+function BlackBox.initialize!(sim::Simulation)::Nothing end
+function BlackBox.evaluate!(sim::Simulation)::Tuple{Real, Real, Bool} end
+function BlackBox.distance!(sim::Simulation)::Real end
+function BlackBox.isevent!(sim::Simulation)::Bool end
+function BlackBox.isterminal!(sim::Simulation)::Bool end
+\end{lstlisting}
 
 The simulator stores simulation-specific parameters and the environment stores a collection of probability distributions that define the state-transitions (e.g., Gaussian noise models, uniform control inputs, etc.).
 Two types of AST action modes are provided to the user: random seed actions or directly sampled actions.
