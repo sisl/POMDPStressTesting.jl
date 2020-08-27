@@ -67,7 +67,7 @@ header-includes: |
 \href{https://github.com/sisl/POMDPStressTesting.jl}{POMDPStressTesting.jl} is a package that uses reinforcement learning and stochastic optimization to find likely failures in black-box systems through a technique called adaptive stress testing [@ast].
 Adaptive stress testing (AST) has been used to find failures in safety-critical systems such as aircraft collision avoidance [@ast_acasx], flight management systems [@ast_fms], and autonomous vehicles [@ast_av].
 The POMDPStressTesting.jl package is written in Julia [@julia] and is part of the wider POMDPs.jl ecosystem [@pomdps_jl].
-Fitting into the POMDPs.jl ecosystem, our package has access to simulation tools, policies, visualizations, and most importantly solvers.
+Fitting into the POMDPs.jl ecosystem, our package has access to simulation tools, policies, visualizations, and---most importantly---solvers.
 We provide several different solver variants including reinforcement learning solvers such as Monte Carlo tree search [@mcts] and deep reinforcement learning solvers such as trust region policy optimization (TRPO) [@trpo] and proximal policy optimization (PPO) [@ppo].
 We also include stochastic optimization solvers such as the cross-entropy method [@cem] and include random search as a baseline.
 Additional solvers can easily be added by adhering to the POMDPs.jl interface.
@@ -88,8 +88,8 @@ function GrayBox.transition!(sim::Simulation)::Real end
 # BlackBox.interface(input::InputType)::OutputType
 function BlackBox.initialize!(sim::Simulation)::Nothing end
 function BlackBox.evaluate!(sim::Simulation)::Tuple{Real, Real, Bool} end
-    function BlackBox.distance!(sim::Simulation)::Real end
-    function BlackBox.isevent!(sim::Simulation)::Bool end
+function BlackBox.distance!(sim::Simulation)::Real end
+function BlackBox.isevent!(sim::Simulation)::Bool end
 function BlackBox.isterminal!(sim::Simulation)::Bool end
 \end{lstlisting}
 \end{mdframed}
@@ -104,7 +104,7 @@ As an example, the functions in the above interface can either be implemented di
 We provide a benchmark example often used in the falsification literature [@at_simulink] which uses a Simulink$^\text{\textregistered}$ automatic transmission model as the black-box system and selects throttle and brake control inputs as part of the environment.
 Typically, implementing the \textsc{Distance} and \textsc{IsEvent} functions rely solely on the output of the black-box system under test, thus keeping in accordance with the black-box formulation.
 
-Our package builds off work originally done in the AdaptiveStressTesting.jl\footnote{\url{https://github.com/sisl/AdaptiveStressTesting.jl}} package, but POMDPStressTesting.jl adheres to the interface defined by the POMDPs.jl package and provides different action modes and solver types.
+Our package builds off work originally done in the AdaptiveStressTesting.jl package, but POMDPStressTesting.jl adheres to the interface defined by the POMDPs.jl package and provides different action modes and solver types.
 Related falsification tools (i.e. tools that do not include most-likely failure analysis) are \textsc{S-TaLiRo} [@staliro], Breach [@breach], \textsc{Rrt-Rex} [@rrtrex], and \textsc{FalStar} [@falstar].
 These packages use a combination of optimization, path planning, and reinforcement learning techniques to solve the falsification problem.
 The tool closely related to POMDPStressTesting.jl is the AST Toolbox in Python [@ast_av], which wraps around the gym reinforcement learning environment [@gym].
