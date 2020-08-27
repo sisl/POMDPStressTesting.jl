@@ -14,52 +14,8 @@ affiliations:
    index: 1
 date: 26 August 2020
 bibliography: paper.bib
-header-includes: |
-    \usepackage{listings}
+
 ---
-\lstdefinelanguage{Julia}
-  {keywords=[3]{initialize!,transition!,evaluate!,distance!,isevent!,isterminal!,environment},
-   keywords=[2]{Nothing, Tuple, Real, Bool, Simulation, BlackBox, GrayBox, Sampleable, Environment},
-   keywords=[1]{function, abstract, type, end},
-   sensitive=true,
-   morecomment=[l]\#,
-   morecomment=[n]{\#=}{=\#},
-   morestring=[s]{"}{"},
-   morestring=[m]{'}{'},
-   alsoletter=!?,
-   literate={,}{{\color[HTML]{0F6FA3},}}1
-            {\{}{{\color[HTML]{0F6FA3}\{}}1
-            {\}}{{\color[HTML]{0F6FA3}\}}}1
-}
-
-\lstset{
-    language         = Julia,
-    backgroundcolor  = \color[HTML]{F2F2F2},
-    basicstyle       = \small\ttfamily\color[HTML]{19177C},
-    numberstyle      = \ttfamily\scriptsize\color[HTML]{7F7F7F},
-    keywordstyle     = [1]{\bfseries\color[HTML]{1BA1EA}},
-    keywordstyle     = [2]{\color[HTML]{0F6FA3}},
-    keywordstyle     = [3]{\color[HTML]{0000FF}},
-    stringstyle      = \color[HTML]{F5615C},
-    commentstyle     = \color[HTML]{AAAAAA},
-    rulecolor        = \color[HTML]{000000},
-    frame=lines,
-    xleftmargin=10pt,
-    framexleftmargin=10pt,
-    framextopmargin=4pt,
-    framexbottommargin=4pt,
-    tabsize=4,
-    captionpos=b,
-    breaklines=true,
-    breakatwhitespace=false,
-    showstringspaces=false,
-    showspaces=false,
-    showtabs=false,
-    columns=fullflexible,
-    keepspaces=true,
-    numbers=none,
-}
-
 
 # Summary
 \href{https://github.com/sisl/POMDPStressTesting.jl}{POMDPStressTesting.jl} is a package that uses reinforcement learning and stochastic optimization to find likely failures in black-box systems through a technique called adaptive stress testing [@ast].
