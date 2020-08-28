@@ -24,7 +24,7 @@ while simultaneously trying to find the set of actions that maximizes the log-li
 
 addpackage!(doc, "url")
 addkeywords!(["BlackBox", "GrayBox", "Simulation", "Environment", "EnvironmentSample", "ASTSampleAction", "ASTSeedAction", "Walk1DSim", "Walk1DParams", "ASTMDP", "MCTSPWSolver", "CEMSolver", "TRPOSolver", "PPOSolver", "RandomSearchSolver", "Distribution", "Normal", "logpdf"]; num=2)
-addkeywords!(["initialize!", "transition!", "evaluate!", "distance!", "isevent!", "isterminal!", "setup_ast", "playout", "playback", "print_metrics", "environment", "solve"]; num=3)
+addkeywords!(["initialize!", "transition!", "evaluate!", "distance", "isevent", "isterminal", "setup_ast", "search!", "playback", "print_metrics", "environment", "solve"]; num=3)
 
 
 @tex T"""\section{Gray-box Simulator and Environment}
@@ -73,8 +73,8 @@ determine failure event indications and distance metrics.
 """
 
 @tex T"""Now we override the \texttt{BlackBox} interface, starting with the
-function that initializes the simulation object. Note, each interface function may
-modify the \texttt{sim} object in place.""" ->
+function that initializes the simulation object. Interface functions
+ending in \texttt{!} may modify the \texttt{sim} object in place.""" ->
 function BlackBox.initialize!(sim::Walk1DSim)
     sim.t = 0
     sim.x = sim.params.startx
@@ -82,25 +82,25 @@ end
 
 
 @tex T"""We define how close we are to a failure event using a non-negative distance metric.""" ->
-BlackBox.distance!(sim::Walk1DSim) = max(sim.params.threshx - abs(sim.x), 0)
+BlackBox.distance(sim::Walk1DSim) = max(sim.params.threshx - abs(sim.x), 0)
 
 
 @tex T"""We define an indication that a failure event occurred.""" ->
-BlackBox.isevent!(sim::Walk1DSim) = abs(sim.x) >= sim.params.threshx
+BlackBox.isevent(sim::Walk1DSim) = abs(sim.x) >= sim.params.threshx
 
 
 @tex T"""Similarly, we define an indication that the simulation is in a terminal state.""" ->
-BlackBox.isterminal!(sim::Walk1DSim) =
-    BlackBox.isevent!(sim) || sim.t >= sim.params.endtime
+BlackBox.isterminal(sim::Walk1DSim) =
+    BlackBox.isevent(sim) || sim.t >= sim.params.endtime
 
 
 @tex T"""Lastly, we use our defined interface to evaluate the system under test.
 Using the input sample, we return the log-likelihood, distance to an event, and event indication.""" ->
 function BlackBox.evaluate!(sim::Walk1DSim, sample::GrayBox.EnvironmentSample)
     logprob::Real = GrayBox.transition!(sim, sample) # Step simulation
-    distance::Real = BlackBox.distance!(sim) # Calculate miss distance
-    event::Bool = BlackBox.isevent!(sim) # Check event indication
-    return (logprob::Real, distance::Real, event::Bool)
+    d::Real = BlackBox.distance(sim) # Calculate miss distance
+    event::Bool = BlackBox.isevent(sim) # Check event indication
+    return (logprob::Real, d::Real, event::Bool)
 end
 
 

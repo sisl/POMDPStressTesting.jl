@@ -45,7 +45,7 @@ function cem_losses(d, samples; mdp::ASTMDP, initstate::ASTState)
             a = ASTSampleAction(env_sample)
             (s, r) = @gen(:sp, :r)(mdp, s, a)
             R += r
-            if BlackBox.isterminal!(sim)
+            if BlackBox.isterminal(sim)
                 break
             end
         end

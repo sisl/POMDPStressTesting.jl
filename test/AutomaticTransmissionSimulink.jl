@@ -69,20 +69,20 @@ end
 
 
 # Override from BlackBox
-BlackBox.distance!(sim::ATSim) = max(minimum(sim.params.speed_thresh .- sim.yout[:,1]), 0) # Non-negative
+BlackBox.distance(sim::ATSim) = max(minimum(sim.params.speed_thresh .- sim.yout[:,1]), 0) # Non-negative
 
 
 # Override from BlackBox
-BlackBox.isevent!(sim::ATSim) = sim.params.stl(sim.yout)
+BlackBox.isevent(sim::ATSim) = sim.params.stl(sim.yout)
 
 
 # Override from BlackBox
-BlackBox.isterminal!(sim::ATSim) = BlackBox.isevent!(sim) || size(sim.action_matrix, 1) >= sim.params.max_actions
+BlackBox.isterminal(sim::ATSim) = BlackBox.isevent(sim) || size(sim.action_matrix, 1) >= sim.params.max_actions
 
 
 # Override from BlackBox
 function BlackBox.evaluate!(sim::ATSim)
-    logprob::Real  = GrayBox.transition!(sim) # Step simulation
+    logprob::Real = GrayBox.transition!(sim) # Step simulation
 
     x = sim.action_matrix # Matrix (not array of arrays)
     @mput x # Pass to MATLAB
@@ -94,15 +94,15 @@ function BlackBox.evaluate!(sim::ATSim)
     sim.tout = mat"results.tout"
     sim.yout = mat"results.yout"
 
-    distance::Real = BlackBox.distance!(sim) # Calculate miss distance
-    event::Bool    = BlackBox.isevent!(sim) # Check event indication
+    d::Real = BlackBox.distance(sim) # Calculate miss distance
+    event::Bool = BlackBox.isevent(sim) # Check event indication
     if event
         @info "Failure event found mid-simulation!"
         header = [:time :speed :rpms :gears]
         display(vcat(header, [sim.tout sim.yout])) # TODO. add stl (:failure) category
     end
 
-    return (logprob::Real, distance::Real, event::Bool)
+    return (logprob::Real, d::Real, event::Bool)
 end
 
 

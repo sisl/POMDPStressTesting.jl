@@ -6,19 +6,19 @@ To stress test a new system, the user has to define the `GrayBox` and `BlackBox`
 
 ### GrayBox Interface
 The `GrayBox` simulator and environment interface includes:
-* `Simulation` type to hold simulation variables
-* `environment(sim::Simulation)` to return the collection of environment distributions
-* `transition!(sim::Simulation)` to transition the simulator, returning the log-likelihood
+* `GrayBox.Simulation` type to hold simulation variables
+* `GrayBox.environment(sim::Simulation)` to return the collection of environment distributions
+* `GrayBox.transition!(sim::Simulation)` to transition the simulator, returning the log-likelihood
 
 ### BlackBox  Interface
 The `BlackBox` system interface includes:
-* `initialize!(sim::Simulation)` to initialize/reset the system under test
-* `evaluate!(sim::Simulation)` to evaluate/execute the system under test
-    * `distance!(sim::Simulation)` to return how close we are to an event
-    * `isevent!(sim::Simulation)` to indicate if a failure event occurred
-* `isterminal!(sim::Simulation)` to indicate the simulation is in a terminal state
+* `BlackBox.initialize!(sim::Simulation)` to initialize/reset the system under test
+* `BlackBox.evaluate!(sim::Simulation)` to evaluate/execute the system under test
+* `BlackBox.distance(sim::Simulation)` to return how close we are to an event
+* `BlackBox.isevent(sim::Simulation)` to indicate if a failure event occurred
+* `BlackBox.isterminal(sim::Simulation)` to indicate the simulation is in a terminal state
 
-All of these functions can modify the `Simulation` object in place.
+Functions ending with `!` may modify the `Simulation` object in place.
 
 
 # Solvers

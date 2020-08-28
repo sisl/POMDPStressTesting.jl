@@ -56,7 +56,7 @@ function get_optimal_path(mdp, tree, snode::Int, actions::Vector{ASTAction}; ver
     else
         AST.go_to_state(mdp, tree.s_labels[snode])
         if verbose
-            if BlackBox.isevent!(mdp.sim)
+            if BlackBox.isevent(mdp.sim)
                 println("Event.")
             else
                 println("End of tree.")

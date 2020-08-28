@@ -52,32 +52,32 @@ end
 
 
 # Override from BlackBox
-BlackBox.distance!(sim::Walk1DSim) = max(sim.params.threshx - abs(sim.x), 0)
+BlackBox.distance(sim::Walk1DSim) = max(sim.params.threshx - abs(sim.x), 0)
 
 
 # Override from BlackBox
-BlackBox.isevent!(sim::Walk1DSim) = abs(sim.x) >= sim.params.threshx
+BlackBox.isevent(sim::Walk1DSim) = abs(sim.x) >= sim.params.threshx
 
 
 # Override from BlackBox
-BlackBox.isterminal!(sim::Walk1DSim) = BlackBox.isevent!(sim) || sim.t >= sim.params.endtime
+BlackBox.isterminal(sim::Walk1DSim) = BlackBox.isevent(sim) || sim.t >= sim.params.endtime
 
 
 # Override from BlackBox (NOTE: used with ASTSeedAction)
 function BlackBox.evaluate!(sim::Walk1DSim)
-    logprob::Real  = GrayBox.transition!(sim) # Step simulation
-    distance::Real = BlackBox.distance!(sim) # Calculate miss distance
-    event::Bool    = BlackBox.isevent!(sim) # Check event indication
-    return (logprob::Real, distance::Real, event::Bool)
+    logprob::Real = GrayBox.transition!(sim) # Step simulation
+    d::Real = BlackBox.distance(sim) # Calculate miss distance
+    event::Bool = BlackBox.isevent(sim) # Check event indication
+    return (logprob::Real, d::Real, event::Bool)
 end
 
 
 # Override from BlackBox (NOTE: used with ASTSampleAction)
 function BlackBox.evaluate!(sim::Walk1DSim, sample::GrayBox.EnvironmentSample)
-    logprob::Real  = GrayBox.transition!(sim, sample) # Step simulation given input sample
-    distance::Real = BlackBox.distance!(sim) # Calculate miss distance
-    event::Bool    = BlackBox.isevent!(sim) # Check event indication
-    return (logprob::Real, distance::Real, event::Bool)
+    logprob::Real = GrayBox.transition!(sim, sample) # Step simulation given input sample
+    d::Real = BlackBox.distance(sim) # Calculate miss distance
+    event::Bool = BlackBox.isevent(sim) # Check event indication
+    return (logprob::Real, d::Real, event::Bool)
 end
 
 
@@ -128,7 +128,7 @@ end
 function run_ast(seed=AST.DEFAULT_SEED; kwargs...)
     planner = setup_ast(seed; kwargs...)
 
-    action_trace::Vector{ASTAction} = playout(planner)
+    action_trace::Vector{ASTAction} = search!(planner) # work done here
     final_state::ASTState = playback(planner, action_trace, sim->sim.x)
     failure_rate::Float64 = print_metrics(planner)
 

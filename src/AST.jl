@@ -159,7 +159,7 @@ function POMDPs.gen(mdp::ASTMDP, s::ASTState, a::ASTAction, rng::AbstractRNG=Ran
     # Update state
     sp = ASTState(t_index=mdp.t_index, parent=s, action=a)
     mdp.sim_hash = sp.hash
-    sp.terminal = mdp.episodic_rewards ? false : BlackBox.isterminal!(mdp.sim) # termination handled by end-of-rollout
+    sp.terminal = mdp.episodic_rewards ? false : BlackBox.isterminal(mdp.sim) # termination handled by end-of-rollout
     r::Float64 = reward(mdp, logprob, isevent, sp.terminal, miss_distance)
     sp.q_value = r
 
@@ -176,7 +176,7 @@ Determine if AST MDP is in a terminal state. Overridden from `POMDPs.isterminal`
 """
 function POMDPs.isterminal(mdp::ASTMDP, s::ASTState)
     @assert mdp.sim_hash == s.hash
-    return BlackBox.isterminal!(mdp.sim)
+    return BlackBox.isterminal(mdp.sim)
 end
 
 
@@ -249,7 +249,7 @@ end
 Record the best paths from termination leaf node.
 """
 function record_trace(mdp::ASTMDP, actions::Vector{ASTAction}, reward::Float64)
-    if mdp.params.top_k > 0 && BlackBox.isterminal!(mdp.sim)
+    if mdp.params.top_k > 0 && BlackBox.isterminal(mdp.sim)
         if !haskey(mdp.top_paths, actions)
             enqueue!(mdp.top_paths, actions, reward)
             while length(mdp.top_paths) > mdp.params.top_k
@@ -319,7 +319,7 @@ function rollout_end(mdp::ASTMDP, s::ASTState, d::Int64; max_depth=-1, feed_gen=
         # Update state
         sp = ASTState(t_index=mdp.t_index, parent=s, action=a)
         mdp.sim_hash = sp.hash
-        sp.terminal = BlackBox.isterminal!(sim)
+        sp.terminal = BlackBox.isterminal(sim)
         r::Float64 = reward(mdp, prob, isevent, sp.terminal, miss_distance)
         sp.q_value = r
 
@@ -395,7 +395,7 @@ function online_path(mdp::MDP, planner::Policy, printstep=(sim, a)->println("Act
     verbose ? printstep(mdp.sim, a) : nothing
     (s, r) = @gen(:sp, :r)(mdp, s, a, Random.GLOBAL_RNG)
 
-    while !BlackBox.isterminal!(mdp.sim)
+    while !BlackBox.isterminal(mdp.sim)
         a = action(planner, s)
         push!(actions, a)
         verbose ? printstep(mdp.sim, a) : nothing
@@ -406,7 +406,7 @@ function online_path(mdp::MDP, planner::Policy, printstep=(sim, a)->println("Act
     ActionType::Type{ASTAction} = actiontype(mdp)
     verbose ? printstep(mdp.sim, ActionType()) : nothing
 
-    if BlackBox.isevent!(mdp.sim)
+    if BlackBox.isevent(mdp.sim)
         @info "Event found!"
     else
         @info "Hit terminal state."

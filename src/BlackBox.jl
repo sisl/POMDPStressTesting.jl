@@ -7,9 +7,9 @@ include("GrayBox.jl")
 
 export initialize!,
        evaluate!,
-       distance!,
-       isevent!,
-       isterminal!
+       distance,
+       isevent,
+       isterminal
 
 
 """
@@ -33,27 +33,27 @@ function evaluate!(sim::GrayBox.Simulation, sample::GrayBox.EnvironmentSample)::
 
 
 """
-    distance!(sim::GrayBox.Simulation)::Real
+    distance(sim::GrayBox.Simulation)::Real
 
 Return how close to an event a terminal state was (i.e. some measure of "miss distance" to the event of interest).
 """
-function distance!(sim::GrayBox.Simulation)::Real end
+function distance(sim::GrayBox.Simulation)::Real end
 
 
 """
-    isevent!(sim::GrayBox.Simulation)::Bool
+    isevent(sim::GrayBox.Simulation)::Bool
 
 Return a boolean indicating if the SUT reached an event of interest.
 """
-function isevent!(sim::GrayBox.Simulation)::Bool end
+function isevent(sim::GrayBox.Simulation)::Bool end
 
 
 """
-    isterminal!(sim::GrayBox.Simulation)::Bool
+    isterminal(sim::GrayBox.Simulation)::Bool
 
 Return an indication that the simulation is in a terminal state.
 """
-function isterminal!(sim::GrayBox.Simulation)::Bool end
+function isterminal(sim::GrayBox.Simulation)::Bool end
 
 
 end # module BlackBox

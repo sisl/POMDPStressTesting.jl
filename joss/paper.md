@@ -18,7 +18,7 @@ header-includes: |
     \usepackage{listings}
 ---
 \lstdefinelanguage{Julia}{
-    keywords=[3]{initialize!, transition!, evaluate!, distance!, isevent!, isterminal!, environment},
+    keywords=[3]{initialize!, transition!, evaluate!, distance, isevent, isterminal, environment},
     keywords=[2]{Nothing, Tuple, Real, Bool, Simulation, BlackBox, GrayBox, Sampleable, Environment},
     keywords=[1]{function, abstract, type, end},
     sensitive=true,
@@ -85,22 +85,23 @@ function GrayBox.transition!(sim::Simulation)::Real end
 # BlackBox.interface(input::InputType)::OutputType
 function BlackBox.initialize!(sim::Simulation)::Nothing end
 function BlackBox.evaluate!(sim::Simulation)::Tuple{Real, Real, Bool} end
-function BlackBox.distance!(sim::Simulation)::Real end
-function BlackBox.isevent!(sim::Simulation)::Bool end
-function BlackBox.isterminal!(sim::Simulation)::Bool end
+function BlackBox.distance(sim::Simulation)::Real end
+function BlackBox.isevent(sim::Simulation)::Bool end
+function BlackBox.isterminal(sim::Simulation)::Bool end
 \end{lstlisting}
 
 The simulator stores simulation-specific parameters and the environment stores a collection of probability distributions that define the state-transitions (e.g., Gaussian noise models, uniform control inputs, etc.).
 Two types of AST action modes are provided to the user: random seed actions or directly sampled actions.
 The seed-action approach is useful when the user does not have direct access to the environmental distributions or when the environment is complex.
-In this case, if the state-transition probability is inaccessible it may be set to $0$, thus guiding the search solely by the distance metric.
+If the state-transition probability is inaccessible, then it may be set to $0$, thus guiding the search solely by the distance metric.
 When using directly sampled actions, the \textsc{Transition} and \textsc{Evaluate} functions can take in an environment sample selected by the solvers and apply it directly as input to the black-box system, allowing for finer control over the search.
+Following Julia conventions, interface functions ending with \texttt{!} may modify the \texttt{sim} object in place.
 
 As an example, the functions in the above interface can either be implemented directly in Julia or can call out to C++, Python, MATLAB$^\text{\textregistered}$ or run a command line executable.
 We provide a benchmark example often used in the falsification literature [@at_simulink] which uses a Simulink$^\text{\textregistered}$ automatic transmission model as the black-box system and selects throttle and brake control inputs as part of the environment.
 Typically, implementing the \textsc{Distance} and \textsc{IsEvent} functions rely solely on the output of the black-box system under test, thus keeping in accordance with the black-box formulation.
 
-Our package builds off work originally done in the AdaptiveStressTesting.jl package, but POMDPStressTesting.jl adheres to the interface defined by POMDPs.jl and provides different action modes and solver types.
+Our package builds off work originally done in the AdaptiveStressTesting.jl [@ast] package, but POMDPStressTesting.jl adheres to the interface defined by POMDPs.jl and provides different action modes and solver types.
 Related falsification tools (i.e. tools that do not include most-likely failure analysis) are \textsc{S-TaLiRo} [@staliro], Breach [@breach], \textsc{Rrt-Rex} [@rrtrex], and \textsc{FalStar} [@falstar].
 These packages use a combination of optimization, path planning, and reinforcement learning techniques to solve the falsification problem.
 The tool closely related to POMDPStressTesting.jl is the AST Toolbox in Python [@ast_av], which wraps around the gym reinforcement learning environment [@gym].
