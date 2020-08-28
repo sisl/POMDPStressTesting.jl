@@ -32,6 +32,7 @@ export
     hash_uint32,
     reset_metrics!,
 
+    search!,
     playback,
     get_top_path,
     online_path

@@ -48,7 +48,7 @@ export AST,
        BlackBox,
        GrayBox,
 
-       playout,
+       search!,
        playback,
        online_path,
        get_top_path,

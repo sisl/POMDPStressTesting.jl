@@ -39,9 +39,9 @@ function POMDPs.action(planner::RandomSearchPlanner, s)
 end
 
 
-# Playout planner from initial AST state.
+# Search using the planner from the initial AST state.
 # Pass back best action trace.
-function playout(planner::RandomSearchPlanner)
+function search!(planner::RandomSearchPlanner)
     mdp::ASTMDP = planner.mdp
     Random.seed!(mdp.params.seed) # Determinism
     s = AST.initialstate(mdp)

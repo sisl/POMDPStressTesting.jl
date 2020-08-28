@@ -135,12 +135,11 @@ function setup_ast(seed=0)
 end
 
 
-@tex T"""After setup, we \textit{playout} the planner and output an action trace of the best trajectory.""" ->
+@tex T"""After setup, we \textit{search} for failures using the planner and output the best action trace.""" ->
 begin
     planner = setup_ast()
-    action_trace = playout(planner)
+    action_trace = search!(planner)
 end
-# @tex T"""Then \textit{playout} the planner and output an action trace of the best trajectory.""" ->
 
 
 @tex T"""We can also \textit{playback} specific trajectories and print intermediate $x$-values.""" ->

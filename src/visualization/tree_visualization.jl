@@ -25,7 +25,7 @@ end
 Visualize MCTS tree structure for AST MDP.
 """
 function visualize(policy::MCTS.DPWPlanner)
-    tree = playout(policy; return_tree=true)
+    tree = search!(policy; return_tree=true)
     d3 = visualize(tree)
 	return d3::D3Tree
 end

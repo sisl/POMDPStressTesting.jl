@@ -105,9 +105,9 @@ function POMDPs.action(planner::CEMPlanner, s; rng=Random.GLOBAL_RNG)
 end
 
 
-# Playout planner from initial AST state.
+# Search using the planner from initial AST state.
 # Pass back best action trace (or importance sampling distribution)
-function playout(planner::CEMPlanner)
+function search!(planner::CEMPlanner)
     mdp::ASTMDP = planner.mdp
     Random.seed!(mdp.params.seed) # Determinism
     s = AST.initialstate(mdp)

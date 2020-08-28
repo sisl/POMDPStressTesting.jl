@@ -30,7 +30,7 @@ function POMDPs.action(planner::Union{TRPOPlanner, PPOPlanner}, s)
 end
 
 
-function playout(planner::Union{TRPOPlanner, PPOPlanner})
+function search!(planner::Union{TRPOPlanner, PPOPlanner})
     mdp::ASTMDP = planner.mdp
     Random.seed!(mdp.params.seed) # Determinism
     s = AST.initialstate(mdp)

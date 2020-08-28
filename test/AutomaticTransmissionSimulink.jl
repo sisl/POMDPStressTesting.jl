@@ -129,7 +129,7 @@ function setup_ast()
 end
 
 planner = setup_ast()
-action_trace = playout(planner)
+action_trace = search!(planner)
 final_state = playback(planner, action_trace)
 
 print_metrics(planner)
