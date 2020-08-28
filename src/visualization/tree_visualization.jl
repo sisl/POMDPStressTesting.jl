@@ -1,5 +1,5 @@
  # Full width cells in Jupyter notebook
-full_width_notebook() = display(HTML("<style>.container { width:100% !important; }</style>"))
+full_width_notebook(width=100) = display(HTML("<style>.container { width:$width% !important; }</style>"))
 
 # Display of action nodes.
 function MCTS.node_tag(s::AST.ASTState)
