@@ -56,7 +56,7 @@ function episodic_figures(metrics::ASTMetrics; gui::Bool=true, fillstd::Bool=fal
         end
         push!(rolling_min, current_min)
     end
-    pl1 = ax.plot(rolling_min, color="darkcyan", label=L"{AST}_{MCTS}")
+    pl1 = ax.plot(rolling_min, color="darkcyan", label="AST")
     ylabel("Miss Distance")
     handles = [pl0, pl1[1]]
 
@@ -75,12 +75,10 @@ function episodic_figures(metrics::ASTMetrics; gui::Bool=true, fillstd::Bool=fal
 
     yscale("log")
 
-    fig.legend(handles, ["Event Horizon", L"{\rm AST}_{\rm MCTS}"],
+    fig.legend(handles, ["Event Horizon", "AST"],
                columnspacing=0.8, loc="lower center", bbox_to_anchor=(0.52, 0), fancybox=true, shadow=false, ncol=5)
     plt.tight_layout()
     fig.subplots_adjust(bottom=0.13) # <-- Change the 0.02 to work for your plot.
-
-    print_metrics(metrics)
 end
 
 
@@ -109,7 +107,7 @@ function distribution_figures(metrics; gui=true)
     xl = plt.xlim()
     plt.xlim([xl[1], xl[2]])
 
-    legend(["Event Horizon", L"{\rm AST}_{\rm MCTS}"], ncol=2, columnspacing=0.5, numpoints=2)
+    legend(["Event Horizon", "AST"], ncol=2, columnspacing=0.5, numpoints=2)
     title("Miss Distance Distribution")
     xlabel(L"-d")
     ylabel("Density");
@@ -120,7 +118,7 @@ function distribution_figures(metrics; gui=true)
     ## Plot 2: Log-likelihood distribution
     subplot(2,1,2)
     Seaborn.kdeplot(metrics.logprob[findall(metrics.event)], bw=0.1, color="darkcyan", shade=true, cut=100)
-    legend([L"{\rm AST}_{\rm MCTS}"], loc="upper left")
+    legend(["AST"], loc="upper left")
     title("Log-Likelihood Distribution: Failure Events")
     xlabel(L"\log p")
     ylabel("Density");

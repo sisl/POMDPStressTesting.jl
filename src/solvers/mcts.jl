@@ -75,13 +75,13 @@ get_optimal_path(mdp, tree, state, actions::Vector{ASTAction}=ASTAction[]; kwarg
 
     This is the main entry function to get a failure trajectories from the planner.
 """
-function search!(planner::DPWPlanner; return_tree::Bool=false)
+function search!(planner::DPWPlanner; return_tree::Bool=false, verbose=false)
     mdp::ASTMDP = planner.mdp
     Random.seed!(mdp.params.seed) # Determinism
 
     initstate = AST.initialstate(mdp)
     tree = MCTS.action_info(planner, initstate, tree_in_info=true, show_progress=true)[2][:tree] # this runs MCTS
-    action_path::Vector = get_optimal_path(mdp, tree, initstate, verbose=true)
+    action_path::Vector = get_optimal_path(mdp, tree, initstate, verbose=verbose)
 
     return return_tree ? tree : action_path
 end

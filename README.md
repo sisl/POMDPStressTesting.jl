@@ -40,9 +40,10 @@ Several solvers are implemented.
 
 # Example
 
-An example implementation of the AST interface is provided for the Walk1D problem: [`test/Walk1D.jl`](https://github.com/mossr/POMDPStressTesting.jl/blob/master/test/Walk1D.jl).
-
-Below is a descriptive tutorial-style write-up: [`walk1d.pdf`](./test/pdf/walk1d.pdf) (created using [TeX.jl](https://github.com/mossr/TeX.jl))
+An example implementation of the AST interface is provided for the Walk1D problem:
+* **Julia source**: [`test/Walk1D.jl`](https://github.com/mossr/POMDPStressTesting.jl/blob/master/test/Walk1D.jl)
+* **Jupyter notebook**: [`notebooks/Walk1D.ipynb`](https://github.com/mossr/POMDPStressTesting.jl/blob/master/notebooks/Walk1D.ipynb)
+* **Descriptive tutorial-style write-up**: [`walk1d.pdf`](./test/pdf/walk1d.pdf) (created using [TeX.jl](https://github.com/mossr/TeX.jl))
 
 <!-- (https://github.com/mossr/POMDPStressTesting.jl/blob/master/test/walk1d.pdf) -->
 
