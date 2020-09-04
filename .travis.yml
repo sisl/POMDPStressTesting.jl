@@ -10,6 +10,7 @@ notifications:
   email: false
 
 script:
+  - julia -e 'using Pkg; pkg"registry add https://github.com/JuliaRegistries/General"'
   - julia -e 'using Pkg; pkg"registry add https://github.com/JuliaPOMDP/Registry"'
   - julia -e 'using Pkg; pkg"instantiate"'
   - >
