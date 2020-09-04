@@ -24,35 +24,32 @@ end
 POMDPs.solve(solver::CEMSolver, mdp::Union{POMDP,MDP}) = CEMPlanner(solver, mdp, nothing)
 
 
-function cem_losses(d, samples; mdp::ASTMDP, initstate::ASTState)
+function cem_losses(d, sample; mdp::ASTMDP, initstate::ASTState)
     sim = mdp.sim
     env = GrayBox.environment(sim)
+    s = initstate
+    R = 0 # accumulated reward
 
-    rewards = []
-    for samplevec in samples
-        BlackBox.initialize!(sim)
-        s = initstate
-        AST.go_to_state(mdp, s)
-        R = 0 # accumulated reward
-        sample_length = length(last(first(samplevec))) # get length of sample vector ("second" element in pair using "first" key)
-        for i in 1:sample_length
-            env_sample = GrayBox.EnvironmentSample()
-            for k in keys(samplevec)
-                value = samplevec[k][i]
-                logprob = logpdf(env[k], value) # log-probability from true distribution
-                env_sample[k] = GrayBox.Sample(value, logprob)
-            end
-            a = ASTSampleAction(env_sample)
-            (s, r) = @gen(:sp, :r)(mdp, s, a)
-            R += r
-            if BlackBox.isterminal(sim)
-                break
-            end
+    BlackBox.initialize!(sim)
+    AST.go_to_state(mdp, s)
+
+    sample_length = length(last(first(sample))) # get length of sample vector ("second" element in pair using "first" key)
+    for i in 1:sample_length
+        env_sample = GrayBox.EnvironmentSample()
+        for k in keys(sample)
+            value = sample[k][i]
+            logprob = logpdf(env[k], value) # log-probability from true distribution
+            env_sample[k] = GrayBox.Sample(value, logprob)
         end
-        push!(rewards, R)
+        a = ASTSampleAction(env_sample)
+        (s, r) = @gen(:sp, :r)(mdp, s, a)
+        R += r
+        if BlackBox.isterminal(sim)
+            break
+        end
     end
 
-    return broadcast(-, rewards) # losses (1 for each sample)
+    return -R # negative (loss)
 end
 
 
@@ -78,10 +75,9 @@ function POMDPs.action(planner::CEMPlanner, s; rng=Random.GLOBAL_RNG)
     is_dist_0 = convert(Dict{Symbol, Vector{Sampleable}}, env, planner.solver.episode_length)
 
     # Run cross-entropy method using importance sampling
-    dummy_loss = ()->nothing
-    is_dist_opt = cross_entropy_method(dummy_loss,
+    loss = (d, sample)->cem_losses(d, sample; mdp=mdp, initstate=s)
+    is_dist_opt = cross_entropy_method(loss,
                                        is_dist_0;
-                                       losses_fn=(d, samples)->cem_losses(d, samples; mdp=mdp, initstate=s),
                                        max_iter=planner.solver.n_iterations,
                                        N=planner.solver.num_samples,
                                        min_elite_samples=planner.solver.min_elite_samples,
