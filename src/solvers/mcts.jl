@@ -5,6 +5,7 @@ function MCTSPWSolver(; kwargs...)
                                 enable_state_pw=false, # required.
                                 reset_callback=AST.go_to_state, # Custom fork of MCTS.jl
                                 tree_in_info=true,
+                                show_progress=true,
                                 kwargs...)
     catch err
         if err isa MethodError
@@ -80,7 +81,7 @@ function search!(planner::DPWPlanner; return_tree::Bool=false, verbose=false)
     Random.seed!(mdp.params.seed) # Determinism
 
     initstate = AST.initialstate(mdp)
-    tree = MCTS.action_info(planner, initstate, tree_in_info=true, show_progress=true)[2][:tree] # this runs MCTS
+    tree = MCTS.action_info(planner, initstate, tree_in_info=true)[2][:tree] # this runs MCTS
     action_path::Vector = get_optimal_path(mdp, tree, initstate, verbose=verbose)
 
     return return_tree ? tree : action_path
