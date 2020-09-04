@@ -12,7 +12,9 @@ notifications:
 script:
   - >
     julia -e 'using Pkg;
-              pkg"registry add https://github.com/JuliaPOMDP/Registry"
+              pkg"registry add https://github.com/JuliaPOMDP/Registry"'
+  - >
+    julia -e 'using'
               pkg"add https://github.com/sisl/POMDPPlayback.jl";
               pkg"add https://github.com/mossr/CrossEntropyMethod.jl";
               pkg"add https://github.com/mossr/MCTS.jl";
