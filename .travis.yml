@@ -14,7 +14,7 @@ script:
     julia -e 'using Pkg;
               pkg"registry add https://github.com/JuliaPOMDP/Registry"'
   - >
-    julia -e 'using'
+    julia -e 'using Pkg;
               pkg"add https://github.com/sisl/POMDPPlayback.jl";
               pkg"add https://github.com/mossr/CrossEntropyMethod.jl";
               pkg"add https://github.com/mossr/MCTS.jl";
