@@ -481,4 +481,8 @@ function reset_metrics!(mdp::ASTMDP)
 end
 
 
+# Stub for solvers to implement
+function search! end
+
+
 end  # module AST

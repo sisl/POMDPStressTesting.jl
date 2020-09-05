@@ -4,8 +4,12 @@ Adaptive Stress Testing for the POMDPs.jl ecosystem."
 module POMDPStressTesting
 
 include("AST.jl")
+include(joinpath("solvers", "drl", "DeepRL.jl"))
 
 using .AST
+using .DeepRL
+using Distributions
+using ProgressMeter
 using Parameters
 using Random
 using POMDPs
@@ -16,17 +20,6 @@ using PyPlot # TODO. Requires.jl
 using Seaborn # for kernel density
 using Statistics
 using D3Trees
-
-# Deep reinforcement learning specific.
-using Flux
-using Flux.Tracker: grad, update!
-using RLInterface
-using Distributed
-using Distributions
-using LinearAlgebra
-using Base.Iterators
-import BSON: @save, @load
-import ProgressMeter: Progress, next!
 
 try
     using CrossEntropyMethod # TODO: POMDPs registry?
@@ -83,6 +76,5 @@ include(joinpath("visualization", "figures.jl"))
 include(joinpath("solvers", "mcts.jl"))
 include(joinpath("solvers", "cem.jl"))
 include(joinpath("solvers", "random_search.jl"))
-include(joinpath("solvers", "drl", "drl.jl"))
 
 end # module POMDPStressTesting

@@ -1,5 +1,26 @@
-# Modified from Shreyas Kowshik's implementation.
+module DeepRL
 
+using ..AST
+using Flux
+using Flux.Tracker: grad, update!
+using POMDPs
+using Random
+using Parameters
+using RLInterface
+using Distributed
+using Distributions
+using LinearAlgebra
+using Base.Iterators
+import BSON: @save, @load
+import ProgressMeter: Progress, next!
+
+export search!,
+       TRPOSolver,
+       TRPOPlanner,
+       PPOSolver,
+       PPOPlanner
+
+# Modified from Shreyas Kowshik's implementation.
 include("policies.jl")
 include("trpo.jl")
 include("ppo.jl")
@@ -30,9 +51,11 @@ function POMDPs.action(planner::Union{TRPOPlanner, PPOPlanner}, s)
 end
 
 
-function search!(planner::Union{TRPOPlanner, PPOPlanner})
+function AST.search!(planner::Union{TRPOPlanner, PPOPlanner})
     mdp::ASTMDP = planner.mdp
     Random.seed!(mdp.params.seed) # Determinism
     s = AST.initialstate(mdp)
     return action(planner, s)
 end
+
+end # module

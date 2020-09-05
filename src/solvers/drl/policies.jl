@@ -187,11 +187,13 @@ end
 
 
 # TODO. Generalize for discrete spaces.
-function set_action_size!(solver, mdp::ASTMDP)
+function set_action_size!(solver, mdp::MDP)
     if actiontype(mdp)== ASTSeedAction
         solver.action_size = 1
     elseif actiontype(mdp) == ASTSampleAction
         solver.action_size = length(GrayBox.environment(mdp.sim))
+    else
+        @warn "solver.action_size not set for actiontype: $(actiontype(mdp))"
     end
     return solver
 end

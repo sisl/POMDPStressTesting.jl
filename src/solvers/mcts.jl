@@ -76,7 +76,7 @@ get_optimal_path(mdp, tree, state, actions::Vector{ASTAction}=ASTAction[]; kwarg
 
     This is the main entry function to get a failure trajectories from the planner.
 """
-function search!(planner::DPWPlanner; return_tree::Bool=false, verbose=false)
+function AST.search!(planner::DPWPlanner; return_tree::Bool=false, verbose=false)
     mdp::ASTMDP = planner.mdp
     Random.seed!(mdp.params.seed) # Determinism
 

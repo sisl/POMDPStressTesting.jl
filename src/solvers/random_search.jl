@@ -41,7 +41,7 @@ end
 
 # Search using the planner from the initial AST state.
 # Pass back best action trace.
-function search!(planner::RandomSearchPlanner)
+function AST.search!(planner::RandomSearchPlanner)
     mdp::ASTMDP = planner.mdp
     Random.seed!(mdp.params.seed) # Determinism
     s = AST.initialstate(mdp)
