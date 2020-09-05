@@ -6,7 +6,7 @@ function print_metrics(metrics::ASTMetrics)
     E = metrics.event
 
     if findfirst(E) === nothing
-        @info "No failures found."
+        @info "No failures recorded."
         return 0
     else
         first_failure = findfirst(E)

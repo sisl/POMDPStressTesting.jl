@@ -73,10 +73,6 @@ For epsidic reward problems (i.e. rewards only at the end of an episode), set `m
     3) Each non-terminal step, no intermediate reward (set `mdp.give_intermediate_reward` to use log transition probability)
 """
 function POMDPs.reward(mdp::ASTMDP, logprob::Float64, isevent::Bool, isterminal::Bool, miss_distance::Float64)
-    if logprob > 0
-        error("Make sure GrayBox.transition! outputs the log-probability.")
-    end
-
     if mdp.episodic_rewards
         r = 0
         if isterminal

@@ -12,7 +12,7 @@ using POMDPs
 using MCTS
 
 # Visualization specific.
-using PyPlot
+using PyPlot # TODO. Requires.jl
 using Seaborn # for kernel density
 using Statistics
 using D3Trees
@@ -29,10 +29,10 @@ import BSON: @save, @load
 import ProgressMeter: Progress, next!
 
 try
-    using CrossEntropyMethod # TODO: LocalRegistry?
+    using CrossEntropyMethod # TODO: POMDPs registry?
 catch err
     if err isa ArgumentError
-        error("Please install CrossEntropyMethod.jl fork via:\nusing Pkg; Pkg.add(PackageSpec(url=\"https://github.com/mossr/CrossEntropyMethod.jl.git\"))")
+        error("Please install CrossEntropyMethod.jl via:\nusing Pkg; pkg\"add https://github.com/sisl/CrossEntropyMethod.jl.git\"")
     end
 end
 
