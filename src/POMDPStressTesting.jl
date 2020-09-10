@@ -4,10 +4,10 @@ Adaptive Stress Testing for the POMDPs.jl ecosystem."
 module POMDPStressTesting
 
 include("AST.jl")
-include(joinpath("solvers", "drl", "DeepRL.jl"))
+include(joinpath("solvers", "drl", "PolicyOptimization.jl"))
 
 using .AST
-using .DeepRL
+using .PolicyOptimization
 using Distributions
 using ProgressMeter
 using Parameters

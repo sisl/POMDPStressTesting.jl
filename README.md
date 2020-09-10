@@ -1,6 +1,7 @@
 # POMDPStressTesting.jl
 
-[![Build Status](https://travis-ci.org/sisl/POMDPStressTesting.jl.svg?branch=master)](https://travis-ci.org/sisl/POMDPStressTesting.jl) [![Example Notebook](https://img.shields.io/badge/example-notebook-blue)](https://nbviewer.jupyter.org/github/sisl/POMDPStressTesting.jl/blob/master/notebooks/Walk1D.ipynb)
+[![Build Status](https://travis-ci.org/sisl/POMDPStressTesting.jl.svg?branch=master)](https://travis-ci.org/sisl/POMDPStressTesting.jl) [![Example Notebook](https://img.shields.io/badge/example-notebook-blue)](https://nbviewer.jupyter.org/github/sisl/POMDPStressTesting.jl/blob/master/notebooks/Walk1D.ipynb) [![codecov](https://codecov.io/gh/sisl/POMDPStressTesting.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/sisl/POMDPStressTesting.jl)
+
 
 Adaptive stress testing of black-box systems, implemented within the [POMDPs.jl](https://github.com/JuliaPOMDP/POMDPs.jl) ecosystem.
 

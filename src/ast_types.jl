@@ -12,6 +12,10 @@ Adaptive Stress Testing specific simulation parameters.
     reset_seed::Union{Nothing, Int64} = nothing # Reset to this seed value on initialize()
     top_k::Int64 = 0 # Number of top performing paths to save (defaults to 0, i.e. do not record)
     debug::Bool = false # Flag to indicate debugging mode (i.e. metrics collection, etc)
+    episodic_rewards::Bool = false # decision making process with epsidic rewards
+    give_intermediate_reward::Bool = false # give log-probability as reward during intermediate gen calls (used only if `episodic_rewards`)
+    reward_bonus::Float64 = episodic_rewards ? 100 : 0 # reward received when event is found, multiplicative when using `episodic_rewards`
+    discount::Float64 = 1.0 # discount factor (generally 1.0 to not discount later samples in the trajectory)
 end
 ASTParams(max_steps::Int64, seed::Int64) = ASTParams(max_steps=max_steps, seed=seed)
 ASTParams(max_steps::Int64, seed::Int64, top_k::Int64, debug::Bool) = ASTParams(max_steps=max_steps, seed=seed, top_k=top_k, debug=debug)
@@ -86,10 +90,6 @@ end
 Adaptive Stress Testing MDP problem formulation object.
 """
 @with_kw mutable struct ASTMDP{Action<:ASTAction} <: MDP{ASTState, Action}
-    episodic_rewards::Bool = false # decision making process with epsidic rewards
-    give_intermediate_reward::Bool = false # give log-probability as reward during intermediate gen calls (used only if `episodic_rewards`)
-    discount::Float64 = 1.0
-    reward_bonus::Float64 = episodic_rewards ? 100 : 0 # reward received when event is found, multiplicative when using `episodic_rewards`
     params::ASTParams = ASTParams() # AST simulation parameters
     sim::GrayBox.Simulation # Black-box simulation struct
     sim_hash::UInt64 = hash(0) # Hash to keep simulations in sync

@@ -4,7 +4,6 @@ authors = ["Robert Moss <mossr@cs.stanford.edu>"]
 version = "0.4.2"
 
 [deps]
-BSON = "fbb218c0-5317-5bc6-957e-2ee96dd4b1f0"
 CrossEntropyMethod = "f7e364ee-db6c-46d3-b598-27dc284d9c4d"
 D3Trees = "e3df1716-f71e-5df9-9e2d-98e193103c45"
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
@@ -12,6 +11,7 @@ Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
 IterTools = "c8e1da08-722c-5040-9ed9-7db0dc04731e"
+JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 MCTS = "e12ccd36-dcad-5f33-8774-9175229e7b33"
 POMDPPolicies = "182e52fb-cfd0-5e46-8c26-fd0667c990f4"
@@ -32,8 +32,9 @@ julia = "1"
 
 [extras]
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+NBInclude = "0db19996-df87-5ea3-a455-e3a50d440464"
 Parameters = "d96e819e-fc66-5662-9728-84c9c7592b0a"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Distributions", "Parameters", "Test"]
+test = ["Distributions", "NBInclude", "Parameters", "Test"]

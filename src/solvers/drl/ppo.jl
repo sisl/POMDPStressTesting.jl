@@ -55,7 +55,7 @@ POMDPs.solve(solver::PPOSolver, mdp::MDP) = PPOPlanner(set_action_size!(solver, 
 POMDPs.solve(solver::PPOSolver, mdp::POMDP) = PPOPlanner(set_action_size!(solver, mdp), mdp, POMDPEnvironment(mdp), nothing)
 
 
-# NOTE: action and playback shared between TRPO and PPO (see DeepRL.jl)
+# NOTE: action and playback shared between TRPO and PPO (see PolicyOptimization.jl)
 
 
 function loss(solver::PPOSolver, policy, states::Array, actions::Array, advantages::Array, returns::Array, old_log_probs::Array)

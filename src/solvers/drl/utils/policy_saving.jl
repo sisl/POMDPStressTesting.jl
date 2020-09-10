@@ -11,21 +11,21 @@ end
 
 function save_policy_net(policy::CategoricalPolicy, path::String)
     π = policy.π
-    @save joinpath(path, "policy_cat.bson") π
+    @save joinpath(path, "policy_cat.jld") π
 end
 
 
 function save_policy_net(policy::DiagonalGaussianPolicy, path::String)
     μ = policy.μ
     logΣ = policy.logΣ
-    @save joinpath(path, "policy_mu.bson") μ
-    @save joinpath(path, "policy_sigma.bson") logΣ
+    @save joinpath(path, "policy_mu.jld") μ
+    @save joinpath(path, "policy_sigma.jld") logΣ
 end
 
 
 function save_value_net(policy::Union{CategoricalPolicy, DiagonalGaussianPolicy}, path)
     value_net = policy.value_net
-    @save joinpath(path, "value.bson") value_net
+    @save joinpath(path, "value.jld") value_net
 end
 
 
@@ -33,8 +33,8 @@ function load_policy(solver, path::String, ::Type{CategoricalPolicy})
     # TODO: create policy after loading.
     policy = CategoricalPolicy(solver)
 
-    @load joinpath(path, "policy_cat.bson") π
-    @load joinpath(path, "value.bson") value_net
+    @load joinpath(path, "policy_cat.jld") π
+    @load joinpath(path, "value.jld") value_net
 
     policy.π = π
     policy.value_net = value_net
@@ -45,11 +45,11 @@ end
 
 function load_policy(solver, path::String, ::Type{DiagonalGaussianPolicy})
     # TODO: create policy after loading.
-    policy = DiagonalGaussianPolicy(solver)
+    policy = DiagonalGaussianPolicy(solver, solver.log_std)
 
-    @load joinpath(path, "policy_mu.bson") μ
-    @load joinpath(path, "policy_sigma.bson") logΣ
-    @load joinpath(path, "value.bson") value_net
+    @load joinpath(path, "policy_mu.jld") μ
+    @load joinpath(path, "policy_sigma.jld") logΣ
+    @load joinpath(path, "value.jld") value_net
 
     policy.μ = μ
     policy.logΣ = logΣ

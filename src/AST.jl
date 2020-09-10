@@ -62,7 +62,7 @@ Reward function for the AST formulation. Defaults to:
     3) Each non-terminal step, accumulate reward correlated with the transition probability
 
 
-For epsidic reward problems (i.e. rewards only at the end of an episode), set `mdp.episodic_rewards` to get:
+For epsidic reward problems (i.e. rewards only at the end of an episode), set `mdp.params.episodic_rewards` to get:
 
     (log(p) - d)*R_E    if isterminal and isevent (1)
     log(p) - d          if isterminal and !isevent (2)
@@ -70,30 +70,30 @@ For epsidic reward problems (i.e. rewards only at the end of an episode), set `m
 
     1) Terminates with event, collect transition probability and miss distance with multiplicative reward bonus
     2) Terminates without event, collect transitions probability and miss distance
-    3) Each non-terminal step, no intermediate reward (set `mdp.give_intermediate_reward` to use log transition probability)
+    3) Each non-terminal step, no intermediate reward (set `mdp.params.give_intermediate_reward` to use log transition probability)
 """
 function POMDPs.reward(mdp::ASTMDP, logprob::Float64, isevent::Bool, isterminal::Bool, miss_distance::Float64)
-    if mdp.episodic_rewards
+    if mdp.params.episodic_rewards
         r = 0
         if isterminal
             r += logprob - miss_distance
             if isevent
-                r *= mdp.reward_bonus # R_E (multiplicative)
+                r *= mdp.params.reward_bonus # R_E (multiplicative)
             end
         else
-            intermediate_reward = mdp.give_intermediate_reward ? logprob : 0
+            intermediate_reward = mdp.params.give_intermediate_reward ? logprob : 0
             r += intermediate_reward
         end
     else # Standard AST reward function
         r = logprob
         if isevent
-            r += mdp.reward_bonus # R_E (additive)
+            r += mdp.params.reward_bonus # R_E (additive)
         elseif isterminal
             r += -miss_distance # Only add miss distance cost if is terminal and not an event.
         end
     end
 
-    if !mdp.episodic_rewards || (mdp.episodic_rewards && isterminal) || (mdp.episodic_rewards && mdp.give_intermediate_reward)
+    if !mdp.params.episodic_rewards || (mdp.params.episodic_rewards && isterminal) || (mdp.params.episodic_rewards && mdp.params.give_intermediate_reward)
         record(mdp, prob=exp(logprob), logprob=logprob, miss_distance=miss_distance, reward=r, event=isevent)
     end
 
@@ -135,7 +135,7 @@ function POMDPs.gen(mdp::ASTMDP, s::ASTState, a::ASTAction, rng::AbstractRNG=Ran
     hasproperty(mdp.sim, :actions) ? push!(mdp.sim.actions, a) : nothing
 
     # Step black-box simulation
-    if mdp.episodic_rewards
+    if mdp.params.episodic_rewards
         # Do not evaluate when problem has episodic rewards
         if a isa ASTSeedAction
             logprob = GrayBox.transition!(mdp.sim)
@@ -155,7 +155,7 @@ function POMDPs.gen(mdp::ASTMDP, s::ASTState, a::ASTAction, rng::AbstractRNG=Ran
     # Update state
     sp = ASTState(t_index=mdp.t_index, parent=s, action=a)
     mdp.sim_hash = sp.hash
-    sp.terminal = mdp.episodic_rewards ? false : BlackBox.isterminal(mdp.sim) # termination handled by end-of-rollout
+    sp.terminal = mdp.params.episodic_rewards ? false : BlackBox.isterminal(mdp.sim) # termination handled by end-of-rollout
     r::Float64 = reward(mdp, logprob, isevent, sp.terminal, miss_distance)
     sp.q_value = r
 
@@ -180,7 +180,7 @@ end
 """
 AST problems are (generally) undiscounted to treat future reward equally. Overridden from `POMDPs.discount` interface.
 """
-POMDPs.discount(mdp::ASTMDP) = mdp.discount
+POMDPs.discount(mdp::ASTMDP) = mdp.params.discount
 
 
 
@@ -399,7 +399,7 @@ function online_path(mdp::MDP, planner::Policy, printstep=(sim, a)->println("Act
     end
 
     # Last step: last action is NULL.
-    ActionType::Type{ASTAction} = actiontype(mdp)
+    ActionType::Type = actiontype(mdp)
     verbose ? printstep(mdp.sim, ActionType()) : nothing
 
     if BlackBox.isevent(mdp.sim)

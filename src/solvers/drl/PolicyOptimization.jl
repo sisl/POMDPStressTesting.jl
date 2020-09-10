@@ -1,4 +1,4 @@
-module DeepRL
+module PolicyOptimization
 
 using ..AST
 using Flux
@@ -11,7 +11,7 @@ using Distributed
 using Distributions
 using LinearAlgebra
 using Base.Iterators
-import BSON: @save, @load
+import JLD2: @save, @load
 import ProgressMeter: Progress, next!
 
 export search!,
