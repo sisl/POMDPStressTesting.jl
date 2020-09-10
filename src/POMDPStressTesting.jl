@@ -25,7 +25,7 @@ try
     using CrossEntropyMethod # TODO: POMDPs registry?
 catch err
     if err isa ArgumentError
-        error("Please install CrossEntropyMethod.jl via:\nusing Pkg; pkg\"add https://github.com/sisl/CrossEntropyMethod.jl.git\"")
+        error("Please install CrossEntropyMethod.jl via:\nusing Pkg; pkg\"add https://github.com/mossr/CrossEntropyMethod.jl.git\"")
     end
 end
 
