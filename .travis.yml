@@ -22,8 +22,8 @@ addons:
 script:
   - julia -e 'using Pkg; pkg"registry add https://github.com/JuliaRegistries/General"'
   - julia -e 'using Pkg; pkg"registry add https://github.com/JuliaPOMDP/Registry"'
-  - julia -e 'using Pkg; pkg"add https://github.com/mossr/CrossEntropyMethod.jl"'
-  - julia -e 'using Pkg; pkg"add https://github.com/JuliaPOMDP/MCTS.jl"'
+  - julia -e 'using Pkg; pkg"add https://github.com/sisl/CrossEntropyMethod.jl"'
+  - julia -e 'using Pkg; pkg"add https://github.com/mossr/MCTS.jl"'
   - julia -e 'using Pkg; Pkg.build(); Pkg.test(coverage=true)'
 after_success:
   - julia -e 'using Pkg; Pkg.add("Coverage"); using Coverage; Codecov.submit(process_folder()); Coveralls.submit(process_folder())'

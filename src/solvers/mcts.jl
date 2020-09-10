@@ -9,7 +9,7 @@ function MCTSPWSolver(; kwargs...)
                                 kwargs...)
     catch err
         if err isa MethodError
-            error("Please install MCTS.jl via:\nusing Pkg; Pkg.add(PackageSpec(url=\"https://github.com/JuliaPOMDP/MCTS.jl.git\"))")
+            error("Please install MCTS.jl via:\nusing Pkg; pkg\"add https://github.com/mossr/MCTS.jl.git\"")
         else
             throw(err)
         end
