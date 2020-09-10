@@ -1,7 +1,7 @@
 name = "POMDPStressTesting"
 uuid = "6fc570d8-62cd-4d35-b113-bbf3c1b8276a"
 authors = ["Robert Moss <mossr@cs.stanford.edu>"]
-version = "0.4.1"
+version = "0.4.2"
 
 [deps]
 BSON = "fbb218c0-5317-5bc6-957e-2ee96dd4b1f0"
