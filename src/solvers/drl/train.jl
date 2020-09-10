@@ -40,7 +40,11 @@ function train!(planner::Union{TRPOPlanner, PPOPlanner})
 
     # Create or load policy
     if solver.resume
-        policy = load_policy(solver, "weights", DiagonalGaussianPolicy) # TODO: parameterize path
+        if solver.policy_type == :discrete
+            policy = load_policy(solver, "weights", CategoricalPolicy) # TODO: parameterize path
+        elseif solver.policy_type == :continuous
+            policy = load_policy(solver, "weights", DiagonalGaussianPolicy) # TODO: parameterize path
+        end
     else
         policy = get_policy(solver)
     end

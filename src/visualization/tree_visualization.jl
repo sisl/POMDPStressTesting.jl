@@ -3,7 +3,7 @@ full_width_notebook(width=100) = display(HTML("<style>.container { width:$width%
 
 # Display of action nodes.
 function MCTS.node_tag(s::AST.ASTState)
-	state_str::String = "0x"*string(s.hash, base=16)
+    state_str::String = "0x"*string(s.hash, base=16)
     if s.terminal
         return "Terminal [$state_str]."
     else
@@ -24,10 +24,10 @@ end
 """
 Visualize MCTS tree structure for AST MDP.
 """
-function visualize(policy::MCTS.DPWPlanner)
-    tree = search!(policy; return_tree=true)
+function visualize(planner::MCTS.DPWPlanner)
+    tree = search!(planner; return_tree=true)
     d3 = visualize(tree)
-	return d3::D3Tree
+    return d3::D3Tree
 end
 
 function visualize(tree::MCTS.DPWTree)

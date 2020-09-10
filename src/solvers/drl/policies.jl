@@ -11,7 +11,7 @@ end
 
 function CategoricalPolicy(solver)
     policy_net = Chain(Dense(solver.state_size, solver.hidden_layer_size, relu; initW=_random_normal, initb=constant_init),
-                       Dense(solver.hidden_layer_size, solver.ACTION_SIZE; initW=_random_normal, initb=constant_init),
+                       Dense(solver.hidden_layer_size, solver.action_size; initW=_random_normal, initb=constant_init),
                        x -> softmax(x))
 
     value_net = Chain(Dense(solver.state_size, solver.hidden_layer_size ,relu; initW=_random_normal),
