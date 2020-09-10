@@ -62,6 +62,7 @@ header-includes: |
 
 
 # Summary
+
 \href{https://github.com/sisl/POMDPStressTesting.jl}{POMDPStressTesting.jl} is a package that uses reinforcement learning and stochastic optimization to find likely failures in black-box systems through a technique called adaptive stress testing [@ast].
 Adaptive stress testing (AST) has been used to find failures in safety-critical systems such as aircraft collision avoidance systems [@ast_acasx], flight management systems [@ast_fms], and autonomous vehicles [@ast_av].
 The POMDPStressTesting.jl package is written in Julia [@julia] and is part of the wider POMDPs.jl ecosystem [@pomdps_jl], which provides access to simulation tools, policies, visualizations, and---most importantly---solvers.
@@ -69,7 +70,7 @@ We provide different solver variants including online planning algorithms such a
 Stochastic optimization solvers such as the cross-entropy method [@cem] are also available and random search is provided as a baseline.
 Additional solvers can easily be added by adhering to the POMDPs.jl interface.
 
-The AST formulation treats the falsification problem (i.e. finding failures) as a Markov decision process with a reward function that uses a measure of distance to a failure event to guide the search towards failure.
+The AST formulation treats the falsification problem (i.e. finding failures) as a Markov decision process (MDP) with a reward function that uses a measure of distance to a failure event to guide the search towards failure.
 The reward function also uses the state transition probabilities to guide towards \textit{likely} failures.
 Reinforcement learning aims to maximize the discounted sum of expected rewards, therefore maximizing the sum of log-likelihoods is equivalent to maximizing the likelihood of a trajectory.
 A gray-box simulation environment steps the simulation and outputs the state transition probabilities, and the black-box system under test is evaluated in the simulator and outputs an event indication and the real-valued distance metric (i.e. how close we are to failure).
@@ -89,22 +90,22 @@ function BlackBox.isevent(sim::Simulation)::Bool end
 function BlackBox.isterminal(sim::Simulation)::Bool end
 \end{lstlisting}
 
-The simulator stores simulation-specific parameters and the environment stores a collection of probability distributions that define the state transitions (e.g., Gaussian noise models, uniform control inputs, etc.).
-There are two types of AST action modes: random seed actions or directly sampled actions.
-The seed-action approach is useful when the user does not have direct access to the environmental distributions or when the environment is complex.
-When using directly sampled actions, the \textsc{Transition} and \textsc{Evaluate} functions can take in an environment sample selected by the solvers and apply it directly as input to the black-box system, allowing for finer control over the search.
-The interface is designed for straightforward extensions to other autonomous system applications.
-Explicitly separating the simulation environment from the system under test allows for wider validation of complex black-box systems.
-
 Our package builds off work originally done in the AdaptiveStressTesting.jl package [@ast], but POMDPStressTesting.jl adheres to the interface defined by POMDPs.jl and provides different action modes and solver types.
 Related falsification tools (i.e. tools that do not include most-likely failure analysis) are \textsc{S-TaLiRo} [@staliro], Breach [@breach], and \textsc{FalStar} [@falstar].
 These packages use a combination of optimization, path planning, and reinforcement learning techniques to solve the falsification problem.
 The tool most closely related to POMDPStressTesting.jl is the AST Toolbox in Python [@ast_av], which wraps around the gym reinforcement learning environment [@gym].
 The author has contributed to the AST Toolbox and found the need to create a similar package in pure Julia for better performance and to interface with the POMDPs.jl ecosystem.
 
+# Statement of Need
+
 Validating autonomous systems is a crucial requirement before their deployment into real-world environments.
-Using automated tools to search for likely failures allow engineers to address and resolve problems during development.
+Searching for likely failures using automated tools enable engineers to address potential problems during development.
 Because many autonomous systems are in environments with rare failure events, it is especially important to incorporate likelihood of failure within the search to help inform the potential problem mitigation.
+This tool provides a simple interface for general black-box systems to fit into the adaptive stress testing problem formulation and gain access to solvers.
+Due to varying simulation environment complexities, random seeds can be used as the AST action when the user does not have direct access to the environmental probability distributions or when the environment is complex.
+Alternatively, directly sampling from the distributions allows for finer control over the search.
+The interface is designed to easily extend to other autonomous system applications and explicitly separating the simulation environment from the system under test allows for wider validation of complex black-box systems.
+
 
 
 # Research and Industrial Usage
