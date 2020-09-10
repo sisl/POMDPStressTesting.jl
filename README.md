@@ -67,9 +67,12 @@ Install the required forked packages then the `POMDPStressTesting.jl` package:
 using Pkg
 pkg"registry add https://github.com/JuliaPOMDP/Registry"
 pkg"add https://github.com/sisl/CrossEntropyMethod.jl"
-pkg"add https://github.com/mossr/MCTS.jl"
+pkg"add https://github.com/JuliaPOMDP/MCTS.jl"
 pkg"add https://github.com/sisl/POMDPStressTesting.jl"
 ```
+
+# Contributing
+We welcome contributions—please fork the repository and submit a new Pull Request with your changes.
 
 ---
 Package maintained by Robert Moss: mossr@cs.stanford.edu
