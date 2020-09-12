@@ -21,10 +21,10 @@ function initialize!(sim::GrayBox.Simulation)::Nothing end
 
 
 """
-    evaluate!(sim::GrayBox.Simulation)::Tuple(logprob, isevent, miss_distance)
-    evaluate!(sim::GrayBox.Simulation, sample::GrayBox.EnvironmentSample)::Tuple(logprob, isevent, miss_distance)
+    evaluate!(sim::GrayBox.Simulation)::Tuple{logprob::Real, miss_distance::Real, isevent::Bool}
+    evaluate!(sim::GrayBox.Simulation, sample::GrayBox.EnvironmentSample)::Tuple{logprob::Real, miss_distance::Real, isevent::Bool}
 
-Evaluate the SUT given some input seed and current state, returns `logprob`, `isevent` indication, and `miss_distance`.
+Evaluate the SUT given some input seed and current state, returns `logprob`, `miss_distance`, and `isevent` indication.
 If the `sample` version is implemented, then ASTSampleAction will be used instead of ASTSeedAction.
 """
 function evaluate!(sim::GrayBox.Simulation)::Tuple{Real, Real, Bool} end
