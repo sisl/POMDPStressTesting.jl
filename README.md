@@ -63,17 +63,21 @@ An example implementation of the AST interface is provided for the Walk1D proble
 
 # Installation
 
-Install the required forked packages then the `POMDPStressTesting.jl` package:
+Install the POMDPs.jl registry then the `POMDPStressTesting.jl` package via:
 ```julia
 using Pkg
 pkg"registry add https://github.com/JuliaPOMDP/Registry"
-pkg"add https://github.com/sisl/CrossEntropyMethod.jl"
-pkg"add https://github.com/mossr/MCTS.jl"
 pkg"add https://github.com/sisl/POMDPStressTesting.jl"
 ```
 
+### Testing
+To run the test suite, you can use the Julia package manager.
+```julia
+] test POMDPStressTesting
+```
+
 # Contributing
-We welcome contributions—please fork the repository and submit a new Pull Request with your changes.
+We welcome contributions! Please fork the repository and submit a new Pull Request.
 
 ---
 Package maintained by Robert Moss: mossr@cs.stanford.edu

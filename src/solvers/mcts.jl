@@ -1,19 +1,11 @@
 # Wrapper: AST version of this the MCTS solver (i.e. sets required parameters)
 function MCTSPWSolver(; kwargs...)
-    try
-        return MCTS.DPWSolver(; estimate_value=AST.rollout, # required.
-                                enable_state_pw=false, # required.
-                                reset_callback=AST.go_to_state, # Custom fork of MCTS.jl
-                                tree_in_info=true,
-                                show_progress=true,
-                                kwargs...)
-    catch err
-        if err isa MethodError
-            error("Please install MCTS.jl via:\nusing Pkg; pkg\"add https://github.com/mossr/MCTS.jl.git\"")
-        else
-            throw(err)
-        end
-    end
+    return MCTS.DPWSolver(; estimate_value=AST.rollout, # required.
+                            enable_state_pw=false, # required.
+                            reset_callback=AST.go_to_state, # Custom fork of MCTS.jl
+                            tree_in_info=true,
+                            show_progress=true,
+                            kwargs...)
 end
 
 

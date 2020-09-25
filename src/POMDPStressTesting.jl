@@ -8,26 +8,19 @@ include(joinpath("solvers", "drl", "PolicyOptimization.jl"))
 
 using .AST
 using .PolicyOptimization
+using CrossEntropyMethod
 using Distributions
-using ProgressMeter
-using Parameters
-using Random
-using POMDPs
 using MCTS
+using Parameters
+using POMDPs
+using ProgressMeter
+using Random
 
 # Visualization specific.
+using D3Trees
 using PyPlot # TODO. Requires.jl
 using Seaborn # for kernel density
 using Statistics
-using D3Trees
-
-try
-    using CrossEntropyMethod # TODO: POMDPs registry?
-catch err
-    if err isa ArgumentError
-        error("Please install CrossEntropyMethod.jl via:\nusing Pkg; pkg\"add https://github.com/sisl/CrossEntropyMethod.jl.git\"")
-    end
-end
 
 
 export AST,

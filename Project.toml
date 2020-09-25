@@ -28,7 +28,8 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 [compat]
 Flux = "0.8"
 POMDPs = "0.9"
-julia = "1"
+MCTS = "0.4.6"
+julia = "1.5"
 
 [extras]
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
