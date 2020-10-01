@@ -24,12 +24,13 @@ RLInterface = "3065fe53-3878-5aed-aae7-ab641be43734"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Seaborn = "d2ef9438-c967-53ab-8060-373fdd9e13eb"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
-Flux = "0.8"
+Flux = "0.10, 0.11"
 POMDPs = "0.9"
 MCTS = "0.4.6"
-julia = "1.5"
+julia = "1"
 
 [extras]
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"

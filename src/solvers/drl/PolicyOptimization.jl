@@ -2,7 +2,8 @@ module PolicyOptimization
 
 using ..AST
 using Flux
-using Flux.Tracker: grad, update!
+using Flux.Optimise: update!
+using Zygote
 using POMDPs
 using Random
 using Parameters

@@ -23,9 +23,9 @@ function gae(policy, states::Array, actions::Array, rewards::Array, next_states:
     A = 0.0
     for i in reverse(1:length(states))
         if length(states) < num_steps && i == length(states)
-            δ = rewards[i] - policy.value_net(states[i]).data[1]
+            δ = rewards[i] - policy.value_net(states[i])[1]
         else
-            δ = rewards[i] + γ*policy.value_net(next_states[i]).data[1] - policy.value_net(states[i]).data[1]
+            δ = rewards[i] + γ*policy.value_net(next_states[i])[1] - policy.value_net(states[i])[1]
         end
 
         A = δ + (γ*λ*A)
@@ -67,7 +67,7 @@ Obtain the gradient vector product. Intermediate utility function, calculates `�
 """
 function gvp(policy, states, kl_vars, x)
     model_params = get_policy_params(policy)
-    gs = Tracker.gradient(() -> kl_loss(policy, states, kl_vars), model_params; nest=true)
+    gs = gradient(() -> kl_loss(policy, states, kl_vars), model_params)
 
     flat_grads = get_flat_grads(gs, get_policy_net(policy))
     return sum(x' * flat_grads)
@@ -81,8 +81,7 @@ Hessian is that of the kl divergence between the old and the new policies w.r.t.
 Returns : `Hx; H = ∇²D_kl`
 """
 function Hvp(policy, states, kl_vars, x; damping_coeff=0.1)
-    model_params = get_policy_params(policy)
-    hessian = Tracker.gradient(() -> gvp(policy, states, kl_vars, x), model_params)
+    hessian = Zygote.forward_jacobian((x) -> gvp(policy, states, kl_vars, x), x)[2]
     return get_flat_grads(hessian, get_policy_net(policy)) # .+ (damping_coeff .* x)
 end
 
@@ -101,7 +100,7 @@ function conjugate_gradients(policy, states, kl_vars, b, nsteps=10, err=1e-10)
     rdotr = r' * r
 
     for i in 1:nsteps
-        hvp = Hvp(policy, states, kl_vars, p).data # Returns array of shape (NUM_PARAMS,1)
+        hvp = Hvp(policy, states, kl_vars, p) # Returns array of shape (NUM_PARAMS,1)
 
         α = rdotr ./ (p' * hvp)
 
@@ -129,27 +128,10 @@ Flattens out the gradients and concatenates them.
 
 `models` : An array of models whose parameter `gradients` are to be falttened.
 
-Returns : Tracked Array of shape `(NUM_PARAMS,1)`
+Returns : Array of shape `(NUM_PARAMS,1)`
 """
 function get_flat_grads(gradients, models)
-
-    flat_grads = []
-
-    function flatten!(p)
-        if typeof(p) <: TrackedArray
-            prod_size = prod(size(p))
-            push!(flat_grads, reshape(gradients[p], prod_size))
-        end
-    end
-
-    for model in models
-        mapleaves(flatten!, model)
-    end
-
-    flat_grads = cat(flat_grads..., dims=1)
-    flat_grads = reshape(flat_grads, length(flat_grads), 1)
-
-    return flat_grads
+    return collect(Iterators.flatten(map(m->Flux.destructure(m)[1], models)))
 end
 
 
@@ -158,27 +140,10 @@ Flattens out the parameters and concatenates them.
 
 `models` : An array of models whose parameters are to be flattened
 
-Returns : Tracked Array of shape `(NUM_PARAMS,1)`
+Returns : Array of shape `(NUM_PARAMS,1)`
 """
 function get_flat_params(models)
-
-    flat_params = []
-
-    function flatten!(p)
-        if typeof(p) <: TrackedArray
-            prod_size = prod(size(p))
-            push!(flat_params, reshape(p, prod_size))
-        end
-    end
-
-    for model in models
-        mapleaves(flatten!, model)
-    end
-
-    flat_params = cat(flat_params..., dims=1)
-    flat_params = reshape(flat_params, length(flat_params), 1)
-
-    return flat_params
+    return Flux.destructure(models)
 end
 
 
@@ -188,20 +153,14 @@ Sets values of `parameters` to the `model`.
 `parameters` : flattened out array of model parameters.
 
 `models` : an array of models whose parameters are to be set.
+
+`reconstruct` : function output by `Flux.destructure` to reconstruct model from parameters
 """
-function set_flat_params!(parameters, models)
-    ptr = 1
-
-    function assign!(p)
-        if typeof(p) <: TrackedArray
-            prod_size = prod(size(p))
-
-            p.data .= Float32.(reshape(parameters[ptr:ptr + prod_size - 1, :], size(p)...)).data
-            ptr += prod_size
-        end
-    end
-
-    for model in models
-        mapleaves(assign!, model)
-    end
+function set_flat_params!(parameters, models, reconstruct)
+    models[:] = reconstruct(parameters)
 end
+
+# To avoid mutation
+Zygote.@nograd get_flat_params
+Zygote.@nograd set_flat_params!
+Zygote.@nograd get_flat_grads

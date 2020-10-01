@@ -12,7 +12,8 @@ function train_step!(planner::Union{TRPOPlanner, PPOPlanner},
     idxs = partition(shuffle(1:size(episode_buffer.exp_dict["states"])[end]), solver.batch_size)
 
     if solver isa TRPOSolver
-        old_params = copy(get_flat_params(get_policy_net(policy)))
+        θ, reconstruct = get_flat_params(get_policy_net(policy))
+        old_params = copy(θ)
     end
 
     for i in idxs
@@ -24,7 +25,7 @@ function train_step!(planner::Union{TRPOPlanner, PPOPlanner},
         mb_kl_vars = episode_buffer.exp_dict["kl_params"][i]
 
         if solver isa TRPOSolver
-            trpo_update!(solver, policy, mb_states, mb_actions, mb_advantages, mb_returns, mb_log_probs, mb_kl_vars, old_params)
+            trpo_update!(solver, policy, mb_states, mb_actions, mb_advantages, mb_returns, mb_log_probs, mb_kl_vars, old_params, reconstruct)
         elseif solver isa PPOSolver
             kl_div = mean(kl_divergence(policy, mb_kl_vars, mb_states))
             solver.verbose ? println("KL Sample : $(kl_div)") : nothing

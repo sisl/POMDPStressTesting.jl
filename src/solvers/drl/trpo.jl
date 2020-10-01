@@ -67,21 +67,21 @@ kl_loss(policy, states::Array, kl_vars) = mean(kl_divergence(policy, kl_vars, st
 value_loss(policy, states::Array, returns::Array) = mean((policy.value_net(states) .- returns).^2)
 
 
-function linesearch!(solver, policy, step_dir, states, actions, advantages, old_log_probs, kl_vars, old_params, num_steps=10; α=0.5)
-    old_loss = policy_loss(policy, states, actions, advantages, old_log_probs).data
+function linesearch!(solver, policy, step_dir, states, actions, advantages, old_log_probs, kl_vars, old_params, reconstruct, num_steps=10; α=0.5)
+    old_loss = policy_loss(policy, states, actions, advantages, old_log_probs)
 
     for i in 1:num_steps
         # Obtain new parameters
         new_params = old_params .+ (α^i .* step_dir)
 
         # Set the new parameters to the policy
-        set_flat_params!(new_params, get_policy_net(policy))
+        set_flat_params!(new_params, get_policy_net(policy), reconstruct)
 
         # Compute surrogate loss
-        new_loss = policy_loss(policy, states, actions, advantages, old_log_probs).data
+        new_loss = policy_loss(policy, states, actions, advantages, old_log_probs)
 
         # Compute kl divergence
-        kl_div = kl_loss(policy, states, kl_vars).data
+        kl_div = kl_loss(policy, states, kl_vars)
 
         # Output Statistics
         solver.verbose ? println("Old Loss : $old_loss") : nothing
@@ -90,19 +90,19 @@ function linesearch!(solver, policy, step_dir, states, actions, advantages, old_
 
         if new_loss >= old_loss && (kl_div <= solver.δ)
             solver.verbose ? println("Success.") : nothing
-            set_flat_params!(new_params, get_policy_net(policy))
+            set_flat_params!(new_params, get_policy_net(policy), reconstruct)
             return nothing
         end
     end
 
-    set_flat_params!(old_params, get_policy_net(policy))
+    set_flat_params!(old_params, get_policy_net(policy), reconstruct)
 end
 
 
-function trpo_update!(solver, policy, states, actions, advantages, returns, log_probs, kl_vars, old_params)
+function trpo_update!(solver, policy, states, actions, advantages, returns, log_probs, kl_vars, old_params, reconstruct)
     model_params = get_policy_params(policy)
-    policy_grads = Tracker.gradient(() -> policy_loss(policy, states, actions, advantages, log_probs), model_params)
-    flat_policy_grads = get_flat_grads(policy_grads, get_policy_net(policy)).data
+    policy_grads = gradient(() -> policy_loss(policy, states, actions, advantages, log_probs), model_params)
+    flat_policy_grads = get_flat_grads(policy_grads, get_policy_net(policy))
 
     x = conjugate_gradients(policy, states, kl_vars, flat_policy_grads, 10)
     solver.verbose ? println(minimum(x' * Hvp(policy, states, kl_vars, x))) : nothing
@@ -120,12 +120,12 @@ function trpo_update!(solver, policy, states, actions, advantages, returns, log_
     end
 
     # Do a line search and update the parameters
-    linesearch!(solver, policy, step_dir, states, actions, advantages, log_probs, kl_vars, old_params)
+    linesearch!(solver, policy, step_dir, states, actions, advantages, log_probs, kl_vars, old_params, reconstruct)
 
     # Update value function
     for _ in 1:solver.value_iterations
         value_params = get_value_params(policy)
-        gs = Tracker.gradient(() -> value_loss(policy, states, returns), value_params)
+        gs = gradient(() -> value_loss(policy, states, returns), value_params)
         update!(solver.optimizer, value_params, gs)
     end
 end

@@ -36,13 +36,13 @@ function DiagonalGaussianPolicy(solver, log_std)
     μ = Chain(Dense(solver.state_size, solver.hidden_layer_size, tanh; initW=_random_normal, initb=constant_init),
               Dense(solver.hidden_layer_size, solver.action_size; initW=_random_normal, initb=constant_init),
               x->tanh.(x),
-              x->param(2.0) .* x) # TODO. Make this vector of environment STDs (i.e. scale it to [-x, +x] action bound)
+              x->2.0 .* x) # TODO. Make this vector of environment STDs (i.e. scale it to [-x, +x] action bound)
 
     value_net = Chain(Dense(solver.state_size, solver.hidden_layer_size, tanh; initW=_random_normal),
                       Dense(solver.hidden_layer_size, solver.hidden_layer_size, tanh; initW=_random_normal),
                       Dense(solver.hidden_layer_size, 1; initW=_random_normal))
 
-    logΣ = param(ones(solver.action_size) * log_std)
+    logΣ = ones(solver.action_size) * log_std
 
     return DiagonalGaussianPolicy(μ, logΣ, value_net, solver)
 end
@@ -52,7 +52,7 @@ end
 Takes in the policy and returns an action based on the current state.
 """
 function get_action(policy::CategoricalPolicy, state)
-    action_probs = policy.π(state).data
+    action_probs = policy.π(state)
     action_probs = reshape(action_probs, policy.solver.action_size)
     return Distributions.sample(1:policy.solver.action_size, Distributions.Weights(action_probs))
 end
@@ -64,15 +64,15 @@ function get_action(policy::DiagonalGaussianPolicy, state)
     log_std = policy.logΣ
 
     σ² = (exp.(log_std)).^2
-    Σ = diagm(0=>σ².data)
-    distribution = MvNormal(μ.data, Σ)
+    Σ = diagm(0=>σ²)
+    distribution = MvNormal(μ, Σ)
 
     return rand(distribution, policy.solver.action_size)
 end
 
 
 test_action(policy::CategoricalPolicy, state) = get_action(policy, state)
-test_action(policy::DiagonalGaussianPolicy, state) = policy.μ(state).data # Use only the mean for prediction
+test_action(policy::DiagonalGaussianPolicy, state) = policy.μ(state) # Use only the mean for prediction
 
 
 """
@@ -101,13 +101,8 @@ Return the log-probability of an action under the current policy parameters.
 """
 function log_prob(policy::CategoricalPolicy, states::Array, actions::Array)
     action_probs = policy.π(states)
-    actions_one_hot = zeros(policy.solver.action_size, size(action_probs)[end])
-    for i in 1:size(action_probs)[end]
-        actions_one_hot[actions[:,i][1],i] = 1.0
-    end
-    return log.(sum((action_probs .+ 1f-5) .* actions_one_hot, dims=1))
+    return log.(sum([action_probs[actions[:,i][1], :] .+ 1f-5 for i in 1:size(action_probs)[end]]))
 end
-
 
 function log_prob(policy::DiagonalGaussianPolicy, states::Array, actions::Array)
     μ = policy.μ(states)
@@ -152,7 +147,7 @@ end
 function kl_divergence(policy::DiagonalGaussianPolicy, kl_params, states::Array)
     μ0 = policy.μ(states)
     logΣ0 = policy.logΣ
-    μ1 = mus = hcat([kl_params[i][1] for i in 1:length(kl_params)]...)
+    μ1 = hcat([kl_params[i][1] for i in 1:length(kl_params)]...)
     logΣ1 = hcat([kl_params[i][2] for i in 1:length(kl_params)]...)
 
     var0 = exp.(2 .* logΣ0)

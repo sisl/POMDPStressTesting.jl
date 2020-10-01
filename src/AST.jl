@@ -45,7 +45,10 @@ include(joinpath("utils", "seeding.jl"))
 include(joinpath("utils", "hashing.jl"))
 include(joinpath("utils", "recording.jl"))
 
-
+# Julia 1.1 compat
+if !@isdefined(hasproperty)
+    hasproperty(x, s::Symbol) = s in propertynames(x)
+end
 
 
 """
@@ -260,7 +263,7 @@ end
 """
 Get k-th top path from the recorded `top_paths`.
 """
-get_top_path(mdp::ASTMDP, k=mdp.params.top_k) = collect(keys(mdp.top_paths))[k]
+get_top_path(mdp::ASTMDP, k=min(mdp.params.top_k, length(mdp.top_paths))) = collect(keys(mdp.top_paths))[k]
 
 
 

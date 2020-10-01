@@ -80,7 +80,7 @@ function ppo_update!(solver::PPOSolver, policy, states::Array, actions::Array, a
     model_params = Flux.params(get_policy_params(policy)..., get_value_params(policy)...)
 
     # Calculate gradients
-    gs = Tracker.gradient(() -> loss(solver, policy, states, actions, advantages, returns, old_log_probs), model_params)
+    gs = gradient(() -> loss(solver, policy, states, actions, advantages, returns, old_log_probs), model_params)
 
     # Take a step of optimization
     update!(solver.optimizer, model_params, gs)

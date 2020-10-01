@@ -27,10 +27,15 @@ Visualize MCTS tree structure for AST MDP.
 function visualize(planner::MCTS.DPWPlanner)
     tree = search!(planner; return_tree=true)
     d3 = visualize(tree)
-    return d3::D3Tree
+    return d3
 end
 
 function visualize(tree::MCTS.DPWTree)
+    if VERSION < v"1.2"
+        # EXCEPPTION_ACCESS_VIOLATION.
+        @warn("D3Tree visualization broken for Julia < v1.2")
+        return nothing
+    end
     d3::D3Tree = D3Tree(tree, init_expand=1)
-    return d3::D3Tree
+    return d3
 end

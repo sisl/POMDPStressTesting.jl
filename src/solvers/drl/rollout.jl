@@ -61,17 +61,17 @@ function collect_rollouts!(env, solver, policy, episode_buffer::Buffer, num_step
             push!(episode_next_states, episode_next_state)
 
             if typeof(episode_action) <: Int64
-                push!(log_probs, log_prob(policy, reshape(episode_state, length(episode_state), 1), [episode_action]).data)
+                push!(log_probs, log_prob(policy, reshape(episode_state, length(episode_state), 1), [episode_action]))
             elseif typeof(episode_action) <: Array
-                push!(log_probs, log_prob(policy, reshape(episode_state, length(episode_state), 1), episode_action).data)
+                push!(log_probs, log_prob(policy, reshape(episode_state, length(episode_state), 1), episode_action))
             end
 
             # Kl divergence variables
             if typeof(policy) <: CategoricalPolicy
                 push!(kl_params, log_probs[end])
             elseif typeof(policy) <: DiagonalGaussianPolicy
-                μ = policy.μ(reshape(episode_state, length(episode_state), 1)).data
-                logΣ = policy.logΣ.data
+                μ = policy.μ(reshape(episode_state, length(episode_state), 1))
+                logΣ = policy.logΣ
                 push!(kl_params, [μ, logΣ])
             end
         end
@@ -85,7 +85,7 @@ function collect_rollouts!(env, solver, policy, episode_buffer::Buffer, num_step
             solver.verbose ? println("\33[2J") : nothing # Clear screen
             solver.verbose ? println("\033[1;1H") : nothing # Move cursor to (1,1)
             solver.verbose ? println("Appending value of last state to returns") : nothing
-            episode_returns = disconunted_returns(episode_rewards, policy.value_net(episode_states[end]).data[1])
+            episode_returns = disconunted_returns(episode_rewards, policy.value_net(episode_states[end])[1])
         end
 
         push!(states, hcat(episode_states...))
