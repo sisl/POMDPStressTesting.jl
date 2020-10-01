@@ -50,6 +50,12 @@ if !@isdefined(hasproperty)
     hasproperty(x, s::Symbol) = s in propertynames(x)
 end
 
+# Julia 1.0 compat
+if !@isdefined(isnothing)
+    isnothing(x) = x === nothing
+end
+
+
 
 """
     reward(s::State)::Float64
