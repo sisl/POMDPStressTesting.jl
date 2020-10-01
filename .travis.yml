@@ -19,7 +19,6 @@ addons:
       - python3-matplotlib
 
 script:
-  - julia -e 'using Pkg; pkg"registry add https://github.com/JuliaRegistries/General"'
   - julia -e 'using Pkg; pkg"add https://github.com/JuliaPOMDP/RLInterface.jl"'
   - julia -e 'using Pkg; Pkg.build(); Pkg.test(coverage=true)'
 after_success:
