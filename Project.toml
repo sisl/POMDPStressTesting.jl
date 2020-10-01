@@ -28,8 +28,8 @@ Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
 Flux = "0.10, 0.11"
-POMDPs = "0.9"
 MCTS = "0.4.6"
+POMDPs = "0.9"
 julia = "1"
 
 [extras]
