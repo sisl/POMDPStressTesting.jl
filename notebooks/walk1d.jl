@@ -5,7 +5,7 @@ using Markdown
 using InteractiveUtils
 
 # ╔═╡ 92ce9460-f62b-11ea-1a8c-179776b5a0b4
-using Distributions, Parameters, POMDPStressTesting, Latexify
+using Distributions, Parameters, POMDPStressTesting, Latexify, PlutoUI
 
 # ╔═╡ 2978b840-f62d-11ea-2ea0-19d7857208b1
 md"""
@@ -34,13 +34,13 @@ Various solvers—which adhere to the POMDPs.jl interface—can be used:
 
 # ╔═╡ 86f13f60-f62d-11ea-3241-f3f1ffe37d7a
 md"""
-### Simple Problem: One-Dimensional Walk (Walk$1$D)
+## Simple Problem: One-Dimensional Walk
 We define a simple problem for adaptive stress testing (AST) to find failures. This problem, called Walk1D, samples random walking distances from a standard normal distribution $\mathcal{N}(0,1)$ and defines failures as walking past a certain threshold (which is set to $\pm 10$ in this example). AST will either select the seed which deterministically controls the sampled value from the distribution (i.e. from the transition model) or will directly sample the provided environmental distributions. These action modes are determined by the seed-action or sample-action options. AST will guide the simulation to failure events using a notion of distance to failure, while simultaneously trying to find the set of actions that maximizes the log-likelihood of the samples.
 """
 
 # ╔═╡ d3411dd0-f62e-11ea-27d7-1b2ed8edc415
 md"""
-### Gray-Box Simulator and Environment
+## Gray-Box Simulator and Environment
 The simulator and environment are treated as gray-box because we need access to the state-transition distributions and their associated likelihoods.
 """
 
@@ -73,7 +73,7 @@ end;
 
 # ╔═╡ 11e445d0-f62f-11ea-305c-495272981112
 md"""
-#### GrayBox.environment
+### GrayBox.environment
 Then, we define our `GrayBox.Environment` distributions. When using the `ASTSampleAction`, as opposed to `ASTSeedAction`, we need to provide access to the sampleable environment.
 """
 
@@ -82,7 +82,7 @@ GrayBox.environment(sim::Walk1DSim) = GrayBox.Environment(:x => sim.distribution
 
 # ╔═╡ 48a5e970-f62f-11ea-111d-35694f3994b4
 md"""
-#### GrayBox.transition!
+### GrayBox.transition!
 We override the `transition!` function from the `GrayBox` interface, which takes an environment sample as input. We apply the sample in our simulator, and return the log-likelihood.
 """
 
@@ -95,13 +95,13 @@ end
 
 # ╔═╡ 6e111310-f62f-11ea-33cf-b5e943b2f088
 md"""
-### Black-Box System
+## Black-Box System
 The system under test, in this case a simple single-dimensional moving agent, is always treated as black-box. The following interface functions are overridden to minimally interact with the system, and use outputs from the system to determine failure event indications and distance metrics.
 """
 
 # ╔═╡ 7c84df7e-f62f-11ea-3b5f-8b090654df19
 md"""
-#### BlackBox.initialize!
+### BlackBox.initialize!
 Now we override the `BlackBox` interface, starting with the function that initializes the simulation object. Interface functions ending in `!` may modify the `sim` object in place.
 """
 
@@ -113,7 +113,7 @@ end
 
 # ╔═╡ a380e250-f62f-11ea-363d-2bf2b59d5eed
 md"""
-#### BlackBox.distance
+### BlackBox.distance
 We define how close we are to a failure event using a non-negative distance metric.
 """
 
@@ -122,7 +122,7 @@ BlackBox.distance(sim::Walk1DSim) = max(sim.params.threshx - abs(sim.x), 0)
 
 # ╔═╡ bf8917b0-f62f-11ea-0e77-b58065b0da3e
 md"""
-#### BlackBox.isevent
+### BlackBox.isevent
 We define an indication that a failure event occurred.
 """
 
@@ -131,7 +131,7 @@ BlackBox.isevent(sim::Walk1DSim) = abs(sim.x) ≥ sim.params.threshx
 
 # ╔═╡ c378ef80-f62f-11ea-176d-e96e1be7736e
 md"""
-#### BlackBox.isterminal
+### BlackBox.isterminal
 Similarly, we define an indication that the simulation is in a terminal state.
 """
 
@@ -142,7 +142,7 @@ end
 
 # ╔═╡ e2f34130-f62f-11ea-220b-c7fc7de2c7e7
 md"""
-#### BlackBox.evaluate!
+### BlackBox.evaluate!
 Lastly, we use our defined interface to evaluate the system under test. Using the input sample, we return the log-likelihood, distance to an event, and event indication.
 """
 
@@ -156,7 +156,7 @@ end
 
 # ╔═╡ 01da7aa0-f630-11ea-1262-f50453455766
 md"""
-### AST Setup and Running
+## AST Setup and Running
 Setting up our simulation, we instantiate our simulation object and pass that to the Markov decision proccess (MDP) object of the adaptive stress testing formulation. We use Monte Carlo tree search (MCTS) with progressive widening on the action space as our solver. Hyperparameters are passed to `MCTSPWSolver`, which is a simple wrapper around the POMDPs.jl implementation of MCTS. Lastly, we solve the MDP to produce a planner. Note we are using the `ASTSampleAction`.
 """
 
@@ -186,7 +186,7 @@ end;
 
 # ╔═╡ 09c928f0-f631-11ea-3ef7-512a6bececcc
 md"""
-#### Searching for Failures
+### Searching for Failures
 After setup, we search for failures using the planner and output the best action trace.
 """
 
@@ -198,7 +198,7 @@ action_trace = search!(planner)
 
 # ╔═╡ 21530220-f631-11ea-3994-319c862d51f9
 md"""
-#### Playback
+### Playback
 We can also playback specific trajectories and print intermediate $x$-values.
 """
 
@@ -210,7 +210,7 @@ failure_rate = print_metrics(planner)
 
 # ╔═╡ b6244db0-f63a-11ea-3b48-89d427664f5e
 md"""
-### Other Solvers: Cross-Entropy Method
+## Other Solvers: Cross-Entropy Method
 We can easily take our `ASTMDP` object (`planner.mdp`) and re-solve the MDP using a different solver—in this case the `CEMSolver`.
 """
 
@@ -234,7 +234,7 @@ cem_failure_rate = print_metrics(cem_planner)
 
 # ╔═╡ 801f8080-f631-11ea-0728-f15dddc3ef5d
 md"""
-### AST Reward Function
+## AST Reward Function
 The AST reward function gives a reward of $0$ if an event is found, a reward of negative distance if no event is found at termination, and the log-likelihood during the simulation.
 """
 
@@ -254,6 +254,9 @@ md"""
 ## References
 1. Robert J. Moss, Ritchie Lee, Nicholas Visser, Joachim Hochwarth, James G. Lopez, and Mykel J. Kochenderfer, "Adaptive Stress Testing of Trajectory Predictions in Flight Management Systems", *Digital Avionics Systems Conference, 2020.*
 """
+
+# ╔═╡ 05be9a80-0877-11eb-3d88-efbd306754a2
+PlutoUI.TableOfContents("POMDPStressTesting.jl")
 
 # ╔═╡ Cell order:
 # ╟─2978b840-f62d-11ea-2ea0-19d7857208b1
@@ -299,3 +302,4 @@ md"""
 # ╟─801f8080-f631-11ea-0728-f15dddc3ef5d
 # ╠═8f06f650-f631-11ea-1c52-697060322173
 # ╟─9463f6e2-f62a-11ea-1cef-c3fa7d4f19ad
+# ╠═05be9a80-0877-11eb-3d88-efbd306754a2
