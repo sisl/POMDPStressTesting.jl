@@ -1,6 +1,8 @@
 # POMDPStressTesting.jl
 
-[![Build Status](https://travis-ci.org/sisl/POMDPStressTesting.jl.svg?branch=master)](https://travis-ci.org/sisl/POMDPStressTesting.jl) [![Example Notebook](https://img.shields.io/badge/example-notebook-blue)](https://nbviewer.jupyter.org/github/sisl/POMDPStressTesting.jl/blob/master/notebooks/Walk1D.ipynb) [![codecov](https://codecov.io/gh/sisl/POMDPStressTesting.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/sisl/POMDPStressTesting.jl)
+[![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://sisl.github.io/POMDPStressTesting.jl/latest)
+[![Build Status](https://travis-ci.org/sisl/POMDPStressTesting.jl.svg?branch=master)](https://travis-ci.org/sisl/POMDPStressTesting.jl)
+[![codecov](https://codecov.io/gh/sisl/POMDPStressTesting.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/sisl/POMDPStressTesting.jl)
 
 
 Adaptive stress testing of black-box systems, implemented within the [POMDPs.jl](https://github.com/JuliaPOMDP/POMDPs.jl) ecosystem.
@@ -43,6 +45,7 @@ Several solvers are implemented.
 
 
 # Example
+[![Example Notebook](https://img.shields.io/badge/example-notebook-blue)](https://nbviewer.jupyter.org/github/sisl/POMDPStressTesting.jl/blob/master/notebooks/Walk1D.ipynb)
 
 An example implementation of the AST interface is provided for the Walk1D problem:
 * **Julia source**: [`test/Walk1D.jl`](https://github.com/mossr/POMDPStressTesting.jl/blob/master/test/Walk1D.jl)

@@ -17,3 +17,7 @@ makedocs(
         "Contributing" => "contrib.md"
     ]
 )
+
+deploydocs(
+    repo = "github.com/sisl/POMDPStressTesting.jl.git",
+)

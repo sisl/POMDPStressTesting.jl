@@ -1,6 +1,10 @@
 using Test
 using NBInclude
 
+@test true # TEMPORARY FOR DOCUMENTATION PURPOSES
+
+#=
+
 testdir = joinpath(dirname(@__DIR__), "test")
 notebookdir = joinpath(dirname(@__DIR__), "notebooks")
 
@@ -100,3 +104,5 @@ end
 
     true
 end
+
+=#
