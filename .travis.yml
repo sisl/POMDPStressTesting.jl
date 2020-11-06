@@ -28,7 +28,7 @@ jobs:
   include:
     - stage: "Documentation"
       julia: 1.5
-      os: windows
+      os: osx
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
