@@ -1,5 +1,5 @@
 """
-Provides virtual interface for Adaptive Stress Testing (AST) formulation of MDPs/POMDPs
+Provides implementation of Adaptive Stress Testing (AST) formulation of MDPs/POMDPs.
 """
 module AST
 
@@ -215,6 +215,9 @@ end
 Randomly select next action, independent of the state. Overridden from `POMDPs.action` interface.
 """
 POMDPs.action(policy::RandomPolicy, s::ASTState) = random_action(policy.problem)
+"""
+Randomly select next actions, independent of the state. Overridden from `POMDPs.actions` interface.
+"""
 POMDPs.actions(mdp::ASTMDP) = [random_action(mdp)]
 
 
@@ -484,13 +487,19 @@ function action_q_trace(s::ASTState)
 end
 
 
-
+"""
+Clear data stored in `mdp.metrics`.
+"""
 function reset_metrics!(mdp::ASTMDP)
     mdp.metrics = ASTMetrics()
 end
 
 
-# Stub for solvers to implement
+"""
+    search!(planner)
+
+Search for failures given a `planner`. Implemented by each solver.
+"""
 function search! end
 
 

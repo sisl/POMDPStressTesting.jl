@@ -22,6 +22,9 @@ ASTParams(max_steps::Int64, seed::Int64, top_k::Int64, debug::Bool) = ASTParams(
 
 
 
+"""
+Abstract type for the AST action variants.
+"""
 abstract type ASTAction end
 
 """

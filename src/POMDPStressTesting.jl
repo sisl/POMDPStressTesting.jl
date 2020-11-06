@@ -1,5 +1,5 @@
 """
-Adaptive Stress Testing for the POMDPs.jl ecosystem."
+Adaptive Stress Testing for the POMDPs.jl ecosystem.
 """
 module POMDPStressTesting
 

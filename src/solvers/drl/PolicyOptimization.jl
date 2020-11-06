@@ -51,7 +51,12 @@ function POMDPs.action(planner::Union{TRPOPlanner, PPOPlanner}, s)
     end
 end
 
+"""
+    AST.search!(planner::Union{TRPOPlanner, PPOPlanner})
 
+Search using the `TRPOPlanner` or `PPOPlanner` from an initial AST state.
+Pass back the best action trace.
+"""
 function AST.search!(planner::Union{TRPOPlanner, PPOPlanner})
     mdp::ASTMDP = planner.mdp
     Random.seed!(mdp.params.seed) # Determinism

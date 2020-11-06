@@ -1,10 +1,15 @@
+"""
+Random search (i.e. Monte Carlo) solver parameters.
+"""
 @with_kw mutable struct RandomSearchSolver
     n_iterations::Int64 = 100
     episode_length::Int64 = 10
     show_progress::Bool = true
 end
 
-
+"""
+Random search planner which takes the `solver` parameters and `mdp` problem.
+"""
 mutable struct RandomSearchPlanner{P<:Union{MDP,POMDP}}
     solver::RandomSearchSolver
     mdp::P
@@ -39,8 +44,11 @@ function POMDPs.action(planner::RandomSearchPlanner, s)
 end
 
 
-# Search using the planner from the initial AST state.
-# Pass back best action trace.
+"""
+    AST.search!(planner::RandomSearchPlanner)
+
+Search using the `RandomSearchPlanner` from an initial AST state. Pass back the best action trace.
+"""
 function AST.search!(planner::RandomSearchPlanner)
     mdp::ASTMDP = planner.mdp
     Random.seed!(mdp.params.seed) # Determinism

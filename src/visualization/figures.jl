@@ -2,6 +2,7 @@ import .AST: ASTMDP, ASTMetrics
 
 """
 Stacked figure with metrics over episodes:
+
     - Running miss distance mean
     - Minimum miss distance
     - Cumulative number of failure events
@@ -85,6 +86,7 @@ end
 
 """
 Stacked figure with distributions:
+
     - Miss distance distribution
     - Log-likelihood distribution
 """

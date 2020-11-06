@@ -23,3 +23,16 @@ script:
   - julia -e 'using Pkg; Pkg.build(); Pkg.test(coverage=true)'
 after_success:
   - julia -e 'using Pkg; Pkg.add("Coverage"); using Coverage; Codecov.submit(process_folder()); Coveralls.submit(process_folder())'
+
+jobs:
+  allow_failures:
+    - os: windows
+  include:
+    - stage: "Documentation"
+      julia: 1
+      os: linux
+      script:
+        - julia --project=docs/ -e 'using Pkg; Pkg.instantiate();
+                                    Pkg.develop(PackageSpec(path=pwd()))'
+        - julia --project=docs/ docs/make.jl
+      after_success: skip

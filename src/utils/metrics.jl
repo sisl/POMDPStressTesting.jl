@@ -1,5 +1,15 @@
 import .AST: ASTMDP, ASTMetrics
 
+"""
+    print_metrics(planner)
+    print_metrics(mdp::ASTMDP)
+    print_metrics(metrics::ASTMetrics)
+
+Print failure metrics including:
+- iteration of first failure
+- number of failures
+- failure rate
+"""
 print_metrics(planner) = print_metrics(planner.mdp.metrics)
 print_metrics(mdp::ASTMDP) = print_metrics(mdp.metrics)
 function print_metrics(metrics::ASTMetrics)

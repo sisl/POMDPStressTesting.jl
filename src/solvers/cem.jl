@@ -1,4 +1,6 @@
-# Cross-entropy method, stochastic optimization solver.
+"""
+Cross-entropy method, stochastic optimization solver.
+"""
 @with_kw mutable struct CEMSolver
     n_iterations::Int64 = 100
     episode_length::Int64 = 30
@@ -12,7 +14,10 @@
     verbose::Bool = false
 end
 
-
+"""
+Planner for the cross-entropy method solver. Takes the `solver::CEMSolver`, the `mdp` problem,
+ and fills in the optimized importance sampling distributions `is_dist`.
+"""
 mutable struct CEMPlanner{P<:Union{MDP,POMDP}}
     solver::CEMSolver
     mdp::P
@@ -101,8 +106,12 @@ function POMDPs.action(planner::CEMPlanner, s; rng=Random.GLOBAL_RNG)
 end
 
 
-# Search using the planner from initial AST state.
-# Pass back best action trace (or importance sampling distribution)
+"""
+    AST.search!(planner::CEMPlanner)
+
+Search for failure events using the `CEMPlanner` from an initial AST state.
+Pass back the best action trace (or importance sampling distribution based on `mdp.params.top_k > 0`).
+"""
 function AST.search!(planner::CEMPlanner)
     mdp::ASTMDP = planner.mdp
     Random.seed!(mdp.params.seed) # Determinism

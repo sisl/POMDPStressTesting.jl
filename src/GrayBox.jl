@@ -38,7 +38,8 @@ end
     GrayBox.Environment
 
 Alias type for a dictionary of gray-box environment distributions.
-     e.g., Environment(:variable_name => Sampleable)
+
+     e.g., `Environment(:variable_name => Sampleable)`
 """
 const Environment = Dict{Symbol, Sampleable}
 
@@ -47,7 +48,8 @@ const Environment = Dict{Symbol, Sampleable}
     GrayBox.EnvironmentSample
 
 Alias type for a single environment sample.
-    e.g., EnvironmentSample(:variable_name => Sample(value, logprob))
+
+    e.g., `EnvironmentSample(:variable_name => Sample(value, logprob))`
 """
 const EnvironmentSample = Dict{Symbol, Sample}
 
@@ -71,7 +73,7 @@ function transition!(sim::Simulation, sample::EnvironmentSample)::Real end
 """
     transition!(sim::GrayBox.Simulation)::Real
 
-Apply a transition step, and return the transition log-probability. (Used with ASTSeedAction)
+Apply a transition step, and return the transition log-probability (used with `ASTSeedAction`).
 """
 function transition!(sim::Simulation)::Real end
 

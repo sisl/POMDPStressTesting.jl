@@ -1,4 +1,6 @@
-# Wrapper: AST version of this the MCTS solver (i.e. sets required parameters)
+"""
+Parameters for the AST version of the `MCTS.DPWSolver` solver.
+"""
 function MCTSPWSolver(; kwargs...)
     return MCTS.DPWSolver(; estimate_value=AST.rollout, # required.
                             enable_state_pw=false, # required.
@@ -64,9 +66,11 @@ get_optimal_path(mdp, tree, state, actions::Vector{ASTAction}=ASTAction[]; kwarg
 
 
 """
-    Search for failure events using the planner.
+    AST.search!(planner::DPWPlanner; return_tree::Bool=false, verbose=false)
 
-    This is the main entry function to get a failure trajectories from the planner.
+Search for failure events using the planner of the `MCTSPWSolver`.
+
+This is the main entry function to get a failure trajectories from the planner.
 """
 function AST.search!(planner::DPWPlanner; return_tree::Bool=false, verbose=false)
     mdp::ASTMDP = planner.mdp
