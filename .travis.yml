@@ -30,6 +30,7 @@ jobs:
       julia: 1.5
       os: windows
       env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
       script:
         - julia --project=docs/ -e 'using Pkg;
