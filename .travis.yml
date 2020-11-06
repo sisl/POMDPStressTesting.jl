@@ -25,12 +25,10 @@ after_success:
   - julia -e 'using Pkg; Pkg.add("Coverage"); using Coverage; Codecov.submit(process_folder()); Coveralls.submit(process_folder())'
 
 jobs:
-  allow_failures:
-    - os: windows
   include:
     - stage: "Documentation"
       julia: 1.5
-      os: linux
+      os: windows
       script:
         - julia --project=docs/ -e 'using Pkg;
                                     pkg"add https://github.com/JuliaPOMDP/RLInterface.jl";
