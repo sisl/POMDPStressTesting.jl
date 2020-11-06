@@ -1,5 +1,4 @@
 [deps]
-POMDPStressTesting = "6fc570d8-62cd-4d35-b113-bbf3c1b8276a"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 
 [compat]
