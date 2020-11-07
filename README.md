@@ -7,6 +7,8 @@
 
 Adaptive stress testing of black-box systems, implemented within the [POMDPs.jl](https://github.com/JuliaPOMDP/POMDPs.jl) ecosystem.
 
+See the [documentation](https://sisl.github.io/POMDPStressTesting.jl/dev/) for more details.
+
 # Interface
 To stress test a new system, the user has to define the `GrayBox` and `BlackBox` interface outlined in [`src/GrayBox.jl`](https://github.com/mossr/POMDPStressTesting.jl/blob/master/src/GrayBox.jl) and [`src/BlackBox.jl`](https://github.com/mossr/POMDPStressTesting.jl/blob/master/src/BlackBox.jl).
 
