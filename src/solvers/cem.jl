@@ -67,6 +67,19 @@ function Base.convert(::Type{Dict{Symbol, Vector{Sampleable}}}, env::GrayBox.Env
 end
 
 
+function Base.convert(::Type{Vector{GrayBox.Environment}}, distr::Dict{Symbol, Vector{Sampleable}}, max_steps::Integer=1)
+    env_vector = GrayBox.Environment[]
+    for t in 1:max_steps
+        env = GrayBox.Environment()
+        for k in keys(distr)
+            env[k] = distr[k][t]
+        end
+        push!(env_vector, env)
+    end
+    return env_vector::Vector{GrayBox.Environment}
+end
+
+
 # Online work performed here.
 function POMDPs.action(planner::CEMPlanner, s; rng=Random.GLOBAL_RNG)
     mdp::ASTMDP = planner.mdp
@@ -109,13 +122,22 @@ end
 """
     AST.search!(planner::CEMPlanner)
 
+
 Search for failure events using the `CEMPlanner` from an initial AST state.
 Pass back the best action trace (or importance sampling distribution based on `mdp.params.top_k > 0`).
+
+    AST.search!(planner::CEMPlanner, s::ASTState)
+
+Search using CEM from a start state `s`.
 """
 function AST.search!(planner::CEMPlanner)
-    mdp::ASTMDP = planner.mdp
     Random.seed!(mdp.params.seed) # Determinism
     s = AST.initialstate(mdp)
-    return action(planner, s)
+    return search!(planner, s)
 end
 
+
+function AST.search!(planner::CEMPlanner, s::ASTState)
+    mdp::ASTMDP = planner.mdp
+    return action(planner, s)
+end
