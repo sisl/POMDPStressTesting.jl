@@ -58,7 +58,7 @@ end
 
 
 """
-    reward(s::State)::Float64
+    reward(mdp::ASTMDP, logprob::Real, isevent::Bool, isterminal::Bool, miss_distance::Real)::Float64
 
 Reward function for the AST formulation. Defaults to:
 
@@ -81,7 +81,7 @@ For epsidic reward problems (i.e. rewards only at the end of an episode), set `m
     2) Terminates without event, collect transitions probability and miss distance
     3) Each non-terminal step, no intermediate reward (set `mdp.params.give_intermediate_reward` to use log transition probability)
 """
-function POMDPs.reward(mdp::ASTMDP, logprob::Float64, isevent::Bool, isterminal::Bool, miss_distance::Float64)
+function POMDPs.reward(mdp::ASTMDP, logprob::Real, isevent::Bool, isterminal::Bool, miss_distance::Real)
     if mdp.params.episodic_rewards
         r = 0
         if isterminal
@@ -147,7 +147,11 @@ function POMDPs.gen(mdp::ASTMDP, s::ASTState, a::ASTAction, rng::AbstractRNG=Ran
     if mdp.params.episodic_rewards
         # Do not evaluate when problem has episodic rewards
         if a isa ASTSeedAction
-            logprob = GrayBox.transition!(mdp.sim)
+            if mdp.params.pass_seed_action
+                logprob = GrayBox.transition!(mdp.sim, a.seed)
+            else
+                logprob = GrayBox.transition!(mdp.sim)
+            end
         elseif a isa ASTSampleAction
             logprob = GrayBox.transition!(mdp.sim, a.sample)
         end
@@ -155,7 +159,11 @@ function POMDPs.gen(mdp::ASTMDP, s::ASTState, a::ASTAction, rng::AbstractRNG=Ran
         miss_distance::Float64 = NaN
     else
         if a isa ASTSeedAction
-            (logprob, miss_distance, isevent) = BlackBox.evaluate!(mdp.sim)
+            if mdp.params.pass_seed_action
+                (logprob, miss_distance, isevent) = BlackBox.evaluate!(mdp.sim, a.seed)
+            else
+                (logprob, miss_distance, isevent) = BlackBox.evaluate!(mdp.sim)
+            end
         elseif a isa ASTSampleAction
             (logprob, miss_distance, isevent) = BlackBox.evaluate!(mdp.sim, a.sample)
         end
@@ -319,7 +327,11 @@ function rollout_end(mdp::ASTMDP, s::ASTState, d::Int64; max_depth=-1, feed_gen=
 
         # Step black-box simulation
         if a isa ASTSeedAction
-            (prob::Float64, miss_distance::Float64, isevent::Bool) = BlackBox.evaluate!(sim)
+            if mdp.params.pass_seed_action
+                (prob::Float64, miss_distance::Float64, isevent::Bool) = BlackBox.evaluate!(sim, a.seed)
+            else
+                (prob, miss_distance, isevent) = BlackBox.evaluate!(sim)
+            end
         elseif a isa ASTSampleAction
             (prob, miss_distance, isevent) = BlackBox.evaluate!(sim, a.sample)
         end

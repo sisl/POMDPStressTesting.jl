@@ -15,6 +15,7 @@ Adaptive Stress Testing specific simulation parameters.
     episodic_rewards::Bool = false # decision making process with epsidic rewards
     give_intermediate_reward::Bool = false # give log-probability as reward during intermediate gen calls (used only if `episodic_rewards`)
     reward_bonus::Float64 = episodic_rewards ? 100 : 0 # reward received when event is found, multiplicative when using `episodic_rewards`
+    pass_seed_action::Bool = false # pass the selected RNG seed to the GrayBox.transition! and BlackBox.evaluate! functions
     discount::Float64 = 1.0 # discount factor (generally 1.0 to not discount later samples in the trajectory)
 end
 ASTParams(max_steps::Int64, seed::Int64) = ASTParams(max_steps=max_steps, seed=seed)

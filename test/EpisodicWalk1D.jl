@@ -104,7 +104,7 @@ function setup_ast(seed=AST.DEFAULT_SEED; solver=MCTSPWSolver)
     else
         mdp = ASTMDP{ASTSeedAction}(sim)
     end
-    mdp.params.episodic_rewards = true # epsidic rewards: collect reward at end of episode
+    mdp.params.episodic_rewards = true # episodic rewards: collect reward at end of episode
     mdp.params.debug = true # record metrics
     mdp.params.top_k = 10 # record top k best trajectories
     mdp.params.seed = seed # set RNG seed for determinism
