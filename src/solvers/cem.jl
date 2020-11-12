@@ -131,6 +131,7 @@ Pass back the best action trace (or importance sampling distribution based on `m
 Search using CEM from a start state `s`.
 """
 function AST.search!(planner::CEMPlanner)
+    mdp::ASTMDP = planner.mdp
     Random.seed!(mdp.params.seed) # Determinism
     s = AST.initialstate(mdp)
     return search!(planner, s)
