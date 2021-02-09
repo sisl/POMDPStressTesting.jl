@@ -15,12 +15,17 @@ using Parameters
 using POMDPs
 using ProgressMeter
 using Random
+using Statistics
 
 # Visualization specific.
 using D3Trees
-using PyPlot # TODO. Requires.jl
-using Seaborn # for kernel density
-using Statistics
+using Requires
+
+function __init__()
+    @require PyPlot="d330b81b-6aea-500a-939a-2ce795aea3ee" begin
+        @require Seaborn="d2ef9438-c967-53ab-8060-373fdd9e13eb" include(joinpath("visualization", "figures.jl"))
+    end
+end
 
 
 export AST,
@@ -64,7 +69,6 @@ export AST,
 
 include(joinpath("utils", "metrics.jl"))
 include(joinpath("visualization", "tree_visualization.jl"))
-include(joinpath("visualization", "figures.jl"))
 
 include(joinpath("solvers", "mcts.jl"))
 include(joinpath("solvers", "cem.jl"))

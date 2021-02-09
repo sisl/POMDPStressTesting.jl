@@ -1,4 +1,6 @@
 import .AST: ASTMDP, ASTMetrics
+using PyPlot
+using Seaborn
 
 """
 Stacked figure with metrics over episodes:

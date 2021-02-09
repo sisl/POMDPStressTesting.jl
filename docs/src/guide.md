@@ -51,6 +51,12 @@ Afterwards, you can look at performance metrics and visualizations (see [Metrics
 print_metrics(planner)
 ```
 
+To plot, first install the `PyPlot` and `Seaborn` packages and load them. We use [`Requires.jl`](https://github.com/JuliaPackaging/Requires.jl) to handle these dependencies.
+```julia
+using PyPlot
+using Seaborn
+```
+
 You can plot episodic metrics, including running miss distance mean, minimum miss distance, and cumulative failures all over episode (i.e. iteration):
 ```julia
 episodic_figures(planner)
