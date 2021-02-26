@@ -19,10 +19,12 @@ function test_solvers(solvers=[MCTSPWSolver, CEMSolver, PPOSolver, TRPOSolver, R
 end
 
 
-@test begin
-    @info "Walk1D Jupyter notebook"
-    @nbinclude(joinpath(notebookdir, "Walk1D.ipynb"))
-    true
+if haskey(ENV, "TESTPLOTS")
+    @test begin
+        @info "Walk1D Jupyter notebook"
+        @nbinclude(joinpath(notebookdir, "Walk1D.ipynb"))
+        true
+    end
 end
 
 
