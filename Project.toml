@@ -1,7 +1,7 @@
 name = "POMDPStressTesting"
 uuid = "6fc570d8-62cd-4d35-b113-bbf3c1b8276a"
 authors = ["Robert Moss <mossr@cs.stanford.edu>"]
-version = "0.4.4"
+version = "0.4.5"
 
 [deps]
 CrossEntropyMethod = "f7e364ee-db6c-46d3-b598-27dc284d9c4d"
