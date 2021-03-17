@@ -1,4 +1,4 @@
-using Documenter, POMDPStressTesting
+using Documenter, POMDPStressTesting, PyPlot, Seaborn
 
 # TODO: Literate.jl to import notebook
 

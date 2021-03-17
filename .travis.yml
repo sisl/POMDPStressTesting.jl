@@ -36,6 +36,8 @@ jobs:
         - julia --project=docs/ -e 'using Pkg;
                                     pkg"add https://github.com/JuliaPOMDP/RLInterface.jl";
                                     pkg"add https://github.com/sisl/POMDPStressTesting.jl";
+                                    Pkg.add("PyPlot");
+                                    Pkg.add("Seaborn");
                                     Pkg.instantiate();
                                     Pkg.develop(PackageSpec(path=pwd()))'
         - julia --project=docs/ docs/make.jl
