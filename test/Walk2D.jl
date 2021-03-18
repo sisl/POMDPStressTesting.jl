@@ -147,13 +147,4 @@ end
 (planner, action_trace, failure_rate) = run_ast()
 
 
-using PyPlot
-function plot_trace(mdp, k=mdp.params.top_k)
-    trace = playback(mdp, get_top_path(mdp, k), sim->[sim.x, sim.y]; return_trace=true)
-    x = map(first, trace)
-    y= map(last, trace)
-    plot(x, y)
-end
-
-
 nothing # Suppress REPL
