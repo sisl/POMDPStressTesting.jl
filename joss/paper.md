@@ -70,10 +70,10 @@ We provide different solver variants including online planning algorithms such a
 Stochastic optimization solvers such as the cross-entropy method [@cem] are also available and random search is provided as a baseline.
 Additional solvers can easily be added by adhering to the POMDPs.jl interface.
 
-The AST formulation treats the falsification problem (i.e. finding failures) as a Markov decision process (MDP) with a reward function that uses a measure of distance to a failure event to guide the search towards failure.
+The AST formulation treats the falsification problem (i.e., finding failures) as a Markov decision process (MDP) with a reward function that uses a measure of distance to a failure event to guide the search towards failure.
 The reward function also uses the state transition probabilities to guide towards \textit{likely} failures.
 Reinforcement learning aims to maximize the discounted sum of expected rewards, therefore maximizing the sum of log-likelihoods is equivalent to maximizing the likelihood of a trajectory.
-A gray-box simulation environment steps the simulation and outputs the state transition probabilities, and the black-box system under test is evaluated in the simulator and outputs an event indication and the real-valued distance metric (i.e. how close we are to failure).
+A gray-box simulation environment steps the simulation and outputs the state transition probabilities, and the black-box system under test is evaluated in the simulator and outputs an event indication and the real-valued distance metric (i.e., how close we are to failure).
 To apply AST to a general black-box system, a user has to implement the following Julia interface:
 
 \begin{lstlisting}[language=Julia]
