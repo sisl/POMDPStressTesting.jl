@@ -18,6 +18,8 @@ addons:
       - python-matplotlib
       - python3-matplotlib
 
+env:
+  - PYTHON=Conda LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/.julia/conda/3/lib
 script:
   - julia test/deps.jl
   - julia -e 'ENV["TESTPLOTS"]=true; using Pkg; Pkg.build(); Pkg.test(coverage=true)'
