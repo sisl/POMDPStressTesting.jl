@@ -32,8 +32,11 @@ jobs:
       julia: 1.5
       os: osx
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
+        - PYTHON=Conda LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/.julia/conda/3/lib
+        - name: GITHUB_TOKEN
+          value: ${{ secrets.GITHUB_TOKEN }}
+        - name: DOCUMENTER_KEY
+          value: ${{ secrets.DOCUMENTER_KEY }}
       script:
         - julia --project=docs/ -e 'using Pkg;
                                     pkg"add https://github.com/JuliaPOMDP/RLInterface.jl";
