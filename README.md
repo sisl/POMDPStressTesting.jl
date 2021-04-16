@@ -9,6 +9,25 @@ Adaptive stress testing of black-box systems, implemented within the [POMDPs.jl]
 
 See the [documentation](https://sisl.github.io/POMDPStressTesting.jl/dev/) for more details.
 
+# Citation
+
+If you use this package for research purposes, please cite the following:
+
+[![status](https://joss.theoj.org/papers/04dc39ea89e90938727d789a2e402b0b/status.svg)](https://joss.theoj.org/papers/04dc39ea89e90938727d789a2e402b0b)
+
+```
+@article{moss2021pomdpstresstesting,
+  title = {{POMDPStressTesting.jl}: Adaptive Stress Testing for Black-Box Systems},
+  author = {Robert J. Moss},
+  journal = {Journal of Open Source Software},
+  year = {2021},
+  volume = {6},
+  number = {60},
+  pages = {2749},
+  doi = {10.21105/joss.02749}
+}
+```
+
 # Interface
 To stress test a new system, the user has to define the `GrayBox` and `BlackBox` interface outlined in [`src/GrayBox.jl`](https://github.com/mossr/POMDPStressTesting.jl/blob/master/src/GrayBox.jl) and [`src/BlackBox.jl`](https://github.com/mossr/POMDPStressTesting.jl/blob/master/src/BlackBox.jl).
 

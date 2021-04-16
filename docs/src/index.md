@@ -69,3 +69,16 @@ The real-valued *distance* metric is used to indicate "how close are we to a fai
 If you use this package for research purposes, please cite the following:
 
 [![status](https://joss.theoj.org/papers/04dc39ea89e90938727d789a2e402b0b/status.svg)](https://joss.theoj.org/papers/04dc39ea89e90938727d789a2e402b0b)
+
+```
+@article{moss2021pomdpstresstesting,
+  title = {{POMDPStressTesting.jl}: Adaptive Stress Testing for Black-Box Systems},
+  author = {Robert J. Moss},
+  journal = {Journal of Open Source Software},
+  year = {2021},
+  volume = {6},
+  number = {60},
+  pages = {2749},
+  doi = {10.21105/joss.02749}
+}
+```
