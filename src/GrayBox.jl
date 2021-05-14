@@ -63,6 +63,22 @@ function environment(sim::Simulation)::Environment end
 
 
 """
+  GrayBox.State
+
+Alias type for an explicit gray-box simulation state.
+"""
+const State = Union{Vector{Real}, Nothing}
+
+
+"""
+  GrayBox.state
+
+Get current state of the gray-box simulation.
+"""
+function state(sim::Simulation)::State end
+
+
+"""
     transition!(sim::Union{GrayBox.Simulation, GrayBox.Simulation})::Real
 
 Given an input `sample::EnvironmentSample`, apply transition and return the transition log-probability.

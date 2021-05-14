@@ -10,6 +10,7 @@ using .AST
 using .PolicyOptimization
 using CrossEntropyMethod
 using Distributions
+using Markdown
 using MCTS
 using Parameters
 using POMDPs
@@ -42,6 +43,7 @@ export AST,
        search!,
        playback,
        online_path,
+       logpdf,
        get_top_path,
        hash_uint32,
 
@@ -49,8 +51,14 @@ export AST,
        full_width_notebook,
        episodic_figures,
        distribution_figures,
+       distribution_figures!,
+       FailureMetrics,
        print_metrics,
+       failure_metrics,
+       latex_metrics,
        reset_metrics!,
+       highest_loglikelihood_of_failure,
+       most_likely_failure,
 
        MCTSPWSolver,
        CEMSolver,

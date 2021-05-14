@@ -82,6 +82,8 @@ function episodic_figures(metrics::ASTMetrics; gui::Bool=true, fillstd::Bool=fal
                columnspacing=0.8, loc="lower center", bbox_to_anchor=(0.52, 0), fancybox=true, shadow=false, ncol=5)
     plt.tight_layout()
     fig.subplots_adjust(bottom=0.13) # <-- Change the 0.02 to work for your plot.
+
+    return gcf()
 end
 
 
@@ -93,38 +95,59 @@ Stacked figure with distributions:
     - Log-likelihood distribution
 """
 distribution_figures(mdp::ASTMDP; kwargs...) = distribution_figures(mdp.metrics; kwargs...)
-function distribution_figures(metrics; gui=true)
+distribution_figures!(mdp::ASTMDP; kwargs...) = distribution_figures(mdp.metrics; kwargs..., hold=true)
+distribution_figures!(metrics; kwargs...) = distribution_figures(metrics; kwargs..., hold=true)
+function distribution_figures(metrics; color="darkcyan", gui=true, logprob=true, bw=[0.1, 0.1], only_failure=false, hold=false, label="AST")
     PyPlot.pygui(gui) # Plot with GUI window (if true)
 
-    fig = figure(figsize=(6,5))
+    if hold
+        fig = gcf()
+    else
+        fig = figure(figsize=(6,5))
+    end
 
     # Font size changes
     plt.rc("axes", titlesize=12, labelsize=11)
     plt.rc("legend", fontsize=11)
 
-
     ## Plot 1: Miss distanace distribution
     subplot(2,1,1)
 
-    Seaborn.kdeplot(-metrics.miss_distance, bw=0.1, color="darkcyan", shade=true, cut=200) # cut=2000
-    plt.axvline(x=0, color="black", linestyle="--", linewidth=1.0)
+    Seaborn.kdeplot(metrics.miss_distance, bw=bw[1], color=color, shade=true, cut=200, label=label) # cut=2000
+    hold == false && plt.axvline(x=0, color="black", linestyle="--", linewidth=1.0, label="Event Horizon")
     xl = plt.xlim()
     plt.xlim([xl[1], xl[2]])
 
-    legend(["Event Horizon", "AST"], ncol=2, columnspacing=0.5, numpoints=2)
+    # legend(["Event Horizon", "AST"], ncol=2, columnspacing=0.5, numpoints=2)
+    legend(ncol=1, columnspacing=0.5, numpoints=2)
     title("Miss Distance Distribution")
-    xlabel(L"-d")
+    xlabel(L"d")
     ylabel("Density");
     yl=ylim()
     ylim([yl[1], yl[2]+0.001]) # y-buffer for legend fit and placement.
 
-
-    ## Plot 2: Log-likelihood distribution
+    ## Plot 2: (Log-)likelihood distribution
     subplot(2,1,2)
-    Seaborn.kdeplot(metrics.logprob[findall(metrics.event)], bw=0.1, color="darkcyan", shade=true, cut=100)
-    legend(["AST"], loc="upper left")
-    title("Log-Likelihood Distribution: Failure Events")
-    xlabel(L"\log p")
+    if logprob
+        p = metrics.logprob[findall(metrics.event)]
+        p_title = "Log-likelihood"
+        p_xlabel = L"\log p"
+    else
+        p = exp.(metrics.logprob[findall(metrics.event)])
+        p_title = "Likelihood"
+        p_xlabel = L"p"
+    end
+    Seaborn.kdeplot(p, bw=bw[2], color=color, shade=true, cut=100, label=label)
+    # legend(["AST"], loc="upper left")
+    legend(loc="upper left")
+    title("$p_title Distribution: Failure Events")
+    xlabel(p_xlabel)
     ylabel("Density");
+    if logprob == false
+        # restrict x-axis to [0,1] for probability
+        xlim([0, 1])
+    end
     fig.tight_layout()
+
+    return gcf()
 end

@@ -14,7 +14,7 @@ function CategoricalPolicy(solver)
                        Dense(solver.hidden_layer_size, solver.action_size; initW=_random_normal, initb=constant_init),
                        x -> softmax(x))
 
-    value_net = Chain(Dense(solver.state_size, solver.hidden_layer_size ,relu; initW=_random_normal),
+    value_net = Chain(Dense(solver.state_size, solver.hidden_layer_size, relu; initW=_random_normal),
                       Dense(solver.hidden_layer_size, solver.hidden_layer_size, relu; initW=_random_normal),
                       Dense(solver.hidden_layer_size, 1; initW=_random_normal))
 
@@ -190,5 +190,6 @@ function set_action_size!(solver, mdp::MDP)
     else
         @warn "solver.action_size not set for actiontype: $(actiontype(mdp))"
     end
+    solver.state_size = length(GrayBox.state(mdp.sim)) # TODO: move to set_state_size! ???
     return solver
 end

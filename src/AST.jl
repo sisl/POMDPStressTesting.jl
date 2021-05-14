@@ -31,10 +31,13 @@ export
     isterminal,
     hash_uint32,
     reset_metrics!,
+    most_likely_failure,
 
     search!,
     playback,
     get_top_path,
+    logpdf,
+    sample,
     online_path
 
 include("BlackBox.jl")
@@ -81,7 +84,7 @@ For epsidic reward problems (i.e. rewards only at the end of an episode), set `m
     2) Terminates without event, collect transitions probability and miss distance
     3) Each non-terminal step, no intermediate reward (set `mdp.params.give_intermediate_reward` to use log transition probability)
 """
-function POMDPs.reward(mdp::ASTMDP, logprob::Real, isevent::Bool, isterminal::Bool, miss_distance::Real)
+function POMDPs.reward(mdp::ASTMDP, logprob::Real, isevent::Bool, isterminal::Bool, miss_distance::Real, rate::Real)
     if mdp.params.episodic_rewards
         r = 0
         if isterminal
@@ -94,16 +97,30 @@ function POMDPs.reward(mdp::ASTMDP, logprob::Real, isevent::Bool, isterminal::Bo
             r += intermediate_reward
         end
     else # Standard AST reward function
+        # always apply logprob to capture all likelihoods
         r = logprob
-        if isevent
+        if isterminal && isevent
             r += mdp.params.reward_bonus # R_E (additive)
-        elseif isterminal
+        elseif isterminal && !isevent
             r += -miss_distance # Only add miss distance cost if is terminal and not an event.
+        end
+        if mdp.params.use_potential_based_shaping
+            r += rate # potential-based reward shaping
         end
     end
 
+    if !isnothing(mdp.predict)
+        # Reward shape based on failure prediction.
+        r += mdp.predict([rate, miss_distance])
+    end
+
     if !mdp.params.episodic_rewards || (mdp.params.episodic_rewards && isterminal) || (mdp.params.episodic_rewards && mdp.params.give_intermediate_reward)
-        record(mdp, prob=exp(logprob), logprob=logprob, miss_distance=miss_distance, reward=r, event=isevent)
+        record(mdp, prob=exp(logprob), logprob=logprob, miss_distance=miss_distance, reward=r, event=isevent, terminal=isterminal, rate=rate)
+    end
+
+    if isterminal
+        # end of episode
+        record_returns(mdp)
     end
 
     return r
@@ -138,7 +155,20 @@ end
 Generate next state and reward for AST MDP (handles episodic reward problems). Overridden from `POMDPs.gen` interface.
 """
 function POMDPs.gen(mdp::ASTMDP, s::ASTState, a::ASTAction, rng::AbstractRNG=Random.GLOBAL_RNG)
+    # Allows us to add keyword arguments like `record`
+    return local_gen(mdp, s, a, rng; record=true)
+end
+
+"""
+Called by @gen from POMDPs but allows us to add keyword arguments like `record`.
+"""
+function local_gen(mdp::ASTMDP, s::ASTState, a::ASTAction, rng::AbstractRNG=Random.GLOBAL_RNG; record::Bool=true)
     @assert mdp.sim_hash == s.hash
+    if mdp.t_index == 1 # initial state indication
+        prev_distance = 0
+    else
+        prev_distance = BlackBox.distance(mdp.sim)
+    end
     mdp.t_index += 1
     isa(a, ASTSeedAction) ? set_global_seed(a) : nothing
     hasproperty(mdp.sim, :actions) ? push!(mdp.sim.actions, a) : nothing
@@ -157,6 +187,7 @@ function POMDPs.gen(mdp::ASTMDP, s::ASTState, a::ASTAction, rng::AbstractRNG=Ran
         end
         isevent::Bool = false
         miss_distance::Float64 = NaN
+        rate::Float64 = NaN
     else
         if a isa ASTSeedAction
             if mdp.params.pass_seed_action
@@ -167,17 +198,21 @@ function POMDPs.gen(mdp::ASTMDP, s::ASTState, a::ASTAction, rng::AbstractRNG=Ran
         elseif a isa ASTSampleAction
             (logprob, miss_distance, isevent) = BlackBox.evaluate!(mdp.sim, a.sample)
         end
+        rate = BlackBox.rate(prev_distance, mdp.sim)
     end
 
     # Update state
     sp = ASTState(t_index=mdp.t_index, parent=s, action=a)
     mdp.sim_hash = sp.hash
+    mdp.rate = rate
     sp.terminal = mdp.params.episodic_rewards ? false : BlackBox.isterminal(mdp.sim) # termination handled by end-of-rollout
-    r::Float64 = reward(mdp, logprob, isevent, sp.terminal, miss_distance)
+    r::Float64 = reward(mdp, logprob, isevent, sp.terminal, miss_distance, rate)
     sp.q_value = r
 
     # TODO: Optimize (debug?)
-    record_trace(mdp, action_q_trace(sp)...)
+    if record
+        record_trace(mdp, action_q_trace(sp)...)
+    end
 
     return (sp=sp, r=r)
 end
@@ -236,25 +271,28 @@ rand(rng::AbstractRNG, s::ASTState) = s
 """
 Used by the RLInterface to interact with deep RL solvers.
 """
-POMDPs.convert_s(::Type{Vector{Float32}}, s::ASTState, mdp::ASTMDP) = [s.hash]
+function POMDPs.convert_s(::Type{Vector{Float32}}, s::ASTState, mdp::ASTMDP)
+    if isnothing(s.state)
+        s.state = GrayBox.state(mdp.sim) # [s.hash]
+    end
+    return s.state
+end
 
 
 
 """
 Reset AST simulation to a given state; used by the MCTS DPWSolver as the `reset_callback` function.
 """
-function go_to_state(mdp::ASTMDP, target_state::ASTState)
+function go_to_state(mdp::ASTMDP, target_state::ASTState; record=false)
     s = initialstate(mdp, Random.GLOBAL_RNG)
     BlackBox.initialize!(mdp.sim)
     actions = action_trace(target_state)
     R = 0.0
     for a in actions
-        s, r = @gen(:sp, :r)(mdp, s, a, Random.GLOBAL_RNG)
+        s, r = local_gen(mdp, s, a, Random.GLOBAL_RNG; record=record)
         R += r
     end
     @assert s == target_state
-
-    # record_trace(mdp, actions, R)
 
     return (R, actions)
 end
@@ -273,6 +311,15 @@ function record_trace(mdp::ASTMDP, actions::Vector{ASTAction}, reward::Float64)
             end
         end
     end
+
+    # Data collection of {(𝐱=disturbances, y=isevent), ...}
+    if mdp.params.collect_data && BlackBox.isterminal(mdp.sim)
+        closure_rate = mdp.rate
+        distance = BlackBox.distance(mdp.sim)
+        𝐱 = vcat(actions, distance, closure_rate)
+        y = BlackBox.isevent(mdp.sim)
+        push!(mdp.dataset, (𝐱, y))
+    end
 end
 
 
@@ -283,6 +330,28 @@ Get k-th top path from the recorded `top_paths`.
 get_top_path(mdp::ASTMDP, k=min(mdp.params.top_k, length(mdp.top_paths))) = collect(keys(mdp.top_paths))[k]
 
 
+"""
+Return the action trace (i.e., trajectory) with the highest log-likelihood that led to failure.
+"""
+most_likely_failure(planner) = most_likely_failure(planner.mdp.metrics, planner.mdp.dataset)
+function most_likely_failure(metrics::ASTMetrics, 𝒟)
+    failure_trace = []
+    if any(metrics.event)
+        # Failures were found.
+        event_indices = []
+        event_logprob = []
+        for (episode, i) in enumerate(findall(metrics.terminal))
+            if metrics.event[i]
+                push!(event_indices, episode)
+                push!(event_logprob, metrics.logprob[i])
+            end
+        end
+        most_likely_failure_episode_index = event_indices[argmax(event_logprob)]
+        failure_trace = 𝒟[most_likely_failure_episode_index][1][1:end-2]
+    end
+    return convert(Vector{ASTAction}, failure_trace)
+end
+
 
 """
 Rollout simulation for MCTS; used by the MCTS DPWSolver as the `estimate_value` function.
@@ -290,7 +359,6 @@ Custom rollout records action trace once the depth has been reached.
 """
 function rollout(mdp::ASTMDP, s::ASTState, d::Int64)
     if d == 0 || isterminal(mdp, s)
-        go_to_state(mdp, s) # Records trace through this call
         return 0.0
     else
         a::ASTAction = random_action(mdp)
@@ -324,6 +392,7 @@ function rollout_end(mdp::ASTMDP, s::ASTState, d::Int64; max_depth=-1, feed_gen=
 
         isa(a, ASTSeedAction) ? set_global_seed(a) : nothing
         hasproperty(sim, :actions) ? push!(sim.actions, a) : nothing
+        rate = BlackBox.distance(sim)
 
         # Step black-box simulation
         if a isa ASTSeedAction
@@ -340,7 +409,7 @@ function rollout_end(mdp::ASTMDP, s::ASTState, d::Int64; max_depth=-1, feed_gen=
         sp = ASTState(t_index=mdp.t_index, parent=s, action=a)
         mdp.sim_hash = sp.hash
         sp.terminal = BlackBox.isterminal(sim)
-        r::Float64 = reward(mdp, prob, isevent, sp.terminal, miss_distance)
+        r::Float64 = reward(mdp, prob, isevent, sp.terminal, miss_distance, rate)
         sp.q_value = r
 
         best_callback(sim, miss_distance) # could use `r` instead
@@ -387,7 +456,7 @@ function playback(mdp::ASTMDP, actions::Vector{ASTAction}, func=nothing; verbose
 
     for a in actions
         isnothing(func) && verbose ? println(string(a)) : nothing
-        (sp, r) = @gen(:sp, :r)(mdp, s, a, rng)
+        (sp, r) = local_gen(mdp, s, a, rng; record=false)
         s = sp
         display_trace ? trace_and_show(func) : nothing
     end
@@ -413,13 +482,13 @@ function online_path(mdp::MDP, planner::Policy, printstep=(sim, a)->println("Act
     a = action(planner, s)
     actions = ASTAction[a]
     verbose ? printstep(mdp.sim, a) : nothing
-    (s, r) = @gen(:sp, :r)(mdp, s, a, Random.GLOBAL_RNG)
+    (s, r) = local_gen(mdp, s, a, Random.GLOBAL_RNG; record=false)
 
     while !BlackBox.isterminal(mdp.sim)
         a = action(planner, s)
         push!(actions, a)
         verbose ? printstep(mdp.sim, a) : nothing
-        (s, r) = @gen(:sp, :r)(mdp, s, a, Random.GLOBAL_RNG)
+        (s, r) = local_gen(mdp, s, a, Random.GLOBAL_RNG; record=false)
     end
 
     # Last step: last action is NULL.

@@ -9,10 +9,31 @@ function record(mdp::ASTMDP, sym::Symbol, val)
     end
 end
 
-function record(mdp::ASTMDP; prob=1, logprob=exp(prob), miss_distance=Inf, reward=-Inf, event=false)
+function record(mdp::ASTMDP; prob=1, logprob=exp(prob), miss_distance=Inf, reward=-Inf, event=false, terminal=false, rate=-Inf)
     AST.record(mdp, :prob, prob)
     AST.record(mdp, :logprob, logprob)
     AST.record(mdp, :miss_distance, miss_distance)
     AST.record(mdp, :reward, reward)
+    AST.record(mdp, :intermediate_reward, reward)
+    AST.record(mdp, :rate, rate)
     AST.record(mdp, :event, event)
+    AST.record(mdp, :terminal, terminal)
+end
+
+function record_returns(mdp::ASTMDP)
+    # compute returns up to now.
+    rewards = mdp.metrics.intermediate_reward
+    G = returns(rewards, γ=discount(mdp))
+    AST.record(mdp, :returns, G)
+    mdp.metrics.intermediate_reward = [] # reset
+end
+
+
+function returns(R; γ=1)
+    T = length(R)
+    G = zeros(T)
+    for t in reverse(1:T)
+        G[t] = t==T ? R[t] : G[t] = R[t] + γ*G[t+1]
+    end
+    return G
 end

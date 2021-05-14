@@ -19,7 +19,8 @@ export search!,
        TRPOSolver,
        TRPOPlanner,
        PPOSolver,
-       PPOPlanner
+       PPOPlanner,
+       disconunted_returns
 
 # Modified from Shreyas Kowshik's implementation.
 include("policies.jl")

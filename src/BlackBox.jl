@@ -41,6 +41,16 @@ function distance(sim::GrayBox.Simulation)::Real end
 
 
 """
+  rate(d_prev::Real, sim::GrayBox.Simulation)::Real
+
+Returns the rate towards a failure as distance/time.
+"""
+function rate(d_prev::Real, sim)
+    return d_prev - BlackBox.distance(sim)
+end
+
+
+"""
     isevent(sim::GrayBox.Simulation)::Bool
 
 Return a boolean indicating if the SUT reached a failure event of interest.
