@@ -82,14 +82,14 @@ Print failure metrics including:
 print_metrics(planner) = print_metrics(planner.mdp.metrics)
 print_metrics(mdp::ASTMDP) = print_metrics(mdp.metrics)
 function print_metrics(metrics::ASTMetrics)
-    failure_metrics = failure_metrics(metrics)
-    if failure_metrics isa FailureMetrics
-        println("First failure: ", failure_metrics.first_failure, " of ", failure_metrics.num_terminals)
-        println("Number of failures: ", failure_metrics.num_failures)
-        println("Failure rate: ", round(failure_metrics.failure_rate, digits=5), "%")
-        println("Highest log-likelihood of failure: ", round(failure_metrics.highest_loglikelihood_of_failure, digits=5))
+    fail_metrics = failure_metrics(metrics)
+    if fail_metrics isa FailureMetrics
+        println("First failure: ", fail_metrics.first_failure, " of ", fail_metrics.num_terminals)
+        println("Number of failures: ", fail_metrics.num_failures)
+        println("Failure rate: ", round(fail_metrics.failure_rate, digits=5), "%")
+        println("Highest log-likelihood of failure: ", round(fail_metrics.highest_loglikelihood_of_failure, digits=5))
     end
-    return failure_metrics
+    return fail_metrics
 end
 
 
