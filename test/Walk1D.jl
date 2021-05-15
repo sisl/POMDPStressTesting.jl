@@ -81,6 +81,10 @@ function BlackBox.evaluate!(sim::Walk1DSim, sample::GrayBox.EnvironmentSample)
 end
 
 
+# Explicit state (optional)
+GrayBox.state(sim::Walk1DSim) = [sim.x]
+
+
 function setup_ast(seed=AST.DEFAULT_SEED; solver=MCTSPWSolver)
     # Create gray-box simulation object
     sim::GrayBox.Simulation = Walk1DSim()

@@ -93,6 +93,10 @@ function BlackBox.evaluate!(sim::Walk2DSim, sample::GrayBox.EnvironmentSample)
 end
 
 
+# Explicit state (optional)
+GrayBox.state(sim::Walk2DSim) = [sim.x, sim.y]
+
+
 function setup_ast(seed=AST.DEFAULT_SEED; solver=PPOSolver)
     # Create gray-box simulation object
     sim::GrayBox.Simulation = Walk2DSim()

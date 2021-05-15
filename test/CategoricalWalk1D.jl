@@ -81,6 +81,10 @@ function BlackBox.evaluate!(sim::CategoricalWalk1DSim, sample::GrayBox.Environme
 end
 
 
+# Explicit state (optional)
+GrayBox.state(sim::CategoricalWalk1DSim) = [sim.x]
+
+
 function setup_ast(seed=AST.DEFAULT_SEED; solver=PPOSolver)
     # Create gray-box simulation object
     sim::GrayBox.Simulation = CategoricalWalk1DSim()

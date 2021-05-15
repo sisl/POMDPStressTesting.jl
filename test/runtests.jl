@@ -42,7 +42,6 @@ end
     @info "Extra functions test"
     (planner, _, _) = run_ast(solver=MCTSPWSolver)
     d3tree = visualize(planner)
-    GrayBox.state(sim::Walk1DSim) = [sim.x]
     action_trace = search!(planner; verbose=true)
     actions = online_path(planner.mdp, planner)
     x_trace = playback(planner, actions, sim->sim.x; return_trace=true)
@@ -93,7 +92,6 @@ end
 
     # Policy saving
     (planner, _, _) = run_ast(solver=PPOSolver)
-    GrayBox.state(sim::CategoricalWalk1DSim) = [sim.x]
     solver = PPOSolver(num_episodes=100, episode_length=30, save=true, verbose=true, policy_type=:discrete)
     planner = solve(solver, planner.mdp)
     search!(planner)
