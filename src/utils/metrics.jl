@@ -87,7 +87,7 @@ function print_metrics(metrics::ASTMetrics)
         println("First failure: ", fail_metrics.first_failure, " of ", fail_metrics.num_terminals)
         println("Number of failures: ", fail_metrics.num_failures)
         println("Failure rate: ", round(fail_metrics.failure_rate, digits=5), "%")
-        println("Highest log-likelihood of failure: ", round(fail_metrics.highest_loglikelihood_of_failure, digits=5))
+        println("Highest log-likelihood of failure: ", round(fail_metrics.highest_loglikelihood, digits=5))
     end
     return fail_metrics
 end
