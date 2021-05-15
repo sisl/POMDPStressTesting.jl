@@ -138,9 +138,9 @@ function run_ast(seed=AST.DEFAULT_SEED; kwargs...)
 
     action_trace::Vector{ASTAction} = search!(planner) # work done here.
     final_state::ASTState = playback(planner, action_trace, sim->(sim.x, sim.y))
-    failure_rate::Float64 = print_metrics(planner)
+    failure_rate = print_metrics(planner)
 
-    return planner, action_trace::Vector{ASTAction}, failure_rate::Float64
+    return planner, action_trace::Vector{ASTAction}, failure_rate
 end
 
 

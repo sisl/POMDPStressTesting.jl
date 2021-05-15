@@ -190,6 +190,9 @@ function set_action_size!(solver, mdp::MDP)
     else
         @warn "solver.action_size not set for actiontype: $(actiontype(mdp))"
     end
-    solver.state_size = length(GrayBox.state(mdp.sim)) # TODO: move to set_state_size! ???
+
+    if !isnothing(GrayBox.state(mdp.sim))
+        solver.state_size = length(GrayBox.state(mdp.sim)) # TODO: move to set_state_size! ???
+    end
     return solver
 end
