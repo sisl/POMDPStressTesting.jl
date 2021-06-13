@@ -24,6 +24,7 @@
     hidden_layer_size::Int64 = 30 # Policy and value hidden layer size
     policy_type::Symbol = :continuous # :discrete or :continuous (TODO. infer)
     log_std::Float64 = log(1) # Initial log standard deviation used in the log-STD network
+    output_factor::Float64 = 2.0 # Scale factor for NN output
 
     # Environment parameters
     state_size::Int64 = 1 # Size of the state/observation space.

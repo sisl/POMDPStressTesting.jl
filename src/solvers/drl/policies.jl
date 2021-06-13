@@ -36,7 +36,7 @@ function DiagonalGaussianPolicy(solver, log_std)
     μ = Chain(Dense(solver.state_size, solver.hidden_layer_size, tanh; initW=_random_normal, initb=constant_init),
               Dense(solver.hidden_layer_size, solver.action_size; initW=_random_normal, initb=constant_init),
               x->tanh.(x),
-              x->2.0 .* x) # TODO. Make this vector of environment STDs (i.e. scale it to [-x, +x] action bound)
+              x->solver.output_factor .* x) # TODO. Make this vector of environment STDs (i.e. scale it to [-x, +x] action bound)
 
     value_net = Chain(Dense(solver.state_size, solver.hidden_layer_size, tanh; initW=_random_normal),
                       Dense(solver.hidden_layer_size, solver.hidden_layer_size, tanh; initW=_random_normal),
@@ -65,9 +65,23 @@ function get_action(policy::DiagonalGaussianPolicy, state)
 
     σ² = (exp.(log_std)).^2
     Σ = diagm(0=>σ²)
-    distribution = MvNormal(μ, Σ)
-
-    return rand(distribution, policy.solver.action_size)
+    try
+        distribution = MvNormal(μ, Σ)
+        return rand(distribution)
+    catch err
+        if err isa Distributions.PosDefException
+            println("——————————————————")
+            @show policy
+            @show state
+            @show log_std
+            @show σ²
+            @show μ
+            @show Σ
+            throw(err)
+        else
+            throw(err)
+        end
+    end
 end
 
 

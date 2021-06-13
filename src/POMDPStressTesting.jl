@@ -69,6 +69,8 @@ export AST,
        TRPOPlanner,
        PPOSolver,
        PPOPlanner,
+       get_action,
+       sample_action,
 
        # For MCTS and RandomSearch
        solve,

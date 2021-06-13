@@ -20,7 +20,9 @@ export search!,
        TRPOPlanner,
        PPOSolver,
        PPOPlanner,
-       disconunted_returns
+       disconunted_returns,
+       get_action,
+       sample_action
 
 # Modified from Shreyas Kowshik's implementation.
 include("policies.jl")
@@ -35,7 +37,19 @@ include("rollout.jl")
 include("train.jl")
 
 
+"""
+Sample random action from DRL policy.
+"""
+function sample_action(planner::Union{TRPOPlanner, PPOPlanner}, statevec)
+    nn_action = get_action(planner.policy, statevec)
+    return translate_ast_action(planner.mdp.sim, nn_action, actiontype(planner.mdp))
+end
+
+
 function POMDPs.action(planner::Union{TRPOPlanner, PPOPlanner}, s)
+    if isnothing(GrayBox.state(planner.mdp.sim))
+        error("GrayBox.state(sim) is nothing, please define this function.")
+    end
     if actiontype(planner.mdp) == ASTSeedAction
         @warn "DRL solvers (TRPO/PPO) are not as effective with ASTSeedAction. Use ASTMDP{ASTSampleAction}() instead."
     end
@@ -46,8 +60,7 @@ function POMDPs.action(planner::Union{TRPOPlanner, PPOPlanner}, s)
         return get_top_path(planner.mdp)
     else
         statevec = convert_s(Vector{Float32}, s, planner.mdp)
-        nn_action = get_action(planner.policy, statevec)
-        ast_action = translate_ast_action(planner.mdp.sim, nn_action, actiontype(planner.mdp))
+        ast_action = sample_action(planner, statevec)
         return ast_action
     end
 end

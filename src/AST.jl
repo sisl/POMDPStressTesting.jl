@@ -85,6 +85,14 @@ For epsidic reward problems (i.e. rewards only at the end of an episode), set `m
     3) Each non-terminal step, no intermediate reward (set `mdp.params.give_intermediate_reward` to use log transition probability)
 """
 function POMDPs.reward(mdp::ASTMDP, logprob::Real, isevent::Bool, isterminal::Bool, miss_distance::Real, rate::Real)
+    # Allows us to add keyword arguments like `record_metrics`
+    return local_reward(mdp, logprob, isevent, isterminal, miss_distance, rate; record_metrics=true)
+end
+
+"""
+Called by `reward` from POMDPs but allows us to add keyword arguments like `record_metrics`.
+"""
+function local_reward(mdp::ASTMDP, logprob::Real, isevent::Bool, isterminal::Bool, miss_distance::Real, rate::Real; record_metrics::Bool=true)
     if mdp.params.episodic_rewards
         r = 0
         if isterminal
@@ -114,8 +122,10 @@ function POMDPs.reward(mdp::ASTMDP, logprob::Real, isevent::Bool, isterminal::Bo
         r += mdp.predict([rate, miss_distance])
     end
 
-    if !mdp.params.episodic_rewards || (mdp.params.episodic_rewards && isterminal) || (mdp.params.episodic_rewards && mdp.params.give_intermediate_reward)
-        record(mdp, prob=exp(logprob), logprob=logprob, miss_distance=miss_distance, reward=r, event=isevent, terminal=isterminal, rate=rate)
+    if record_metrics
+        if !mdp.params.episodic_rewards || (mdp.params.episodic_rewards && isterminal) || (mdp.params.episodic_rewards && mdp.params.give_intermediate_reward)
+            record(mdp, prob=exp(logprob), logprob=logprob, miss_distance=miss_distance, reward=r, event=isevent, terminal=isterminal, rate=rate)
+        end
     end
 
     if isterminal
@@ -206,7 +216,7 @@ function local_gen(mdp::ASTMDP, s::ASTState, a::ASTAction, rng::AbstractRNG=Rand
     mdp.sim_hash = sp.hash
     mdp.rate = rate
     sp.terminal = mdp.params.episodic_rewards ? false : BlackBox.isterminal(mdp.sim) # termination handled by end-of-rollout
-    r::Float64 = reward(mdp, logprob, isevent, sp.terminal, miss_distance, rate)
+    r::Float64 = local_reward(mdp, logprob, isevent, sp.terminal, miss_distance, rate; record_metrics=record)
     sp.q_value = r
 
     # TODO: Optimize (debug?)
@@ -283,7 +293,7 @@ end
 """
 Reset AST simulation to a given state; used by the MCTS DPWSolver as the `reset_callback` function.
 """
-function go_to_state(mdp::ASTMDP, target_state::ASTState; record=false)
+function go_to_state(mdp::ASTMDP, target_state::ASTState; record=true)
     s = initialstate(mdp, Random.GLOBAL_RNG)
     BlackBox.initialize!(mdp.sim)
     actions = action_trace(target_state)
@@ -299,6 +309,9 @@ end
 
 
 
+global TMP_DATA_RATE = []
+global TMP_DATA_DISTANCE = []
+
 """
 Record the best paths from termination leaf node.
 """
@@ -312,14 +325,31 @@ function record_trace(mdp::ASTMDP, actions::Vector{ASTAction}, reward::Float64)
         end
     end
 
-    # Data collection of {(𝐱=disturbances, y=isevent), ...}
-    if mdp.params.collect_data && BlackBox.isterminal(mdp.sim)
+    # Data collection of {(𝐱=rates, y=isevent), ...}
+    if mdp.params.collect_data
+        global TMP_DATA_RATE, TMP_DATA_DISTANCE
         closure_rate = mdp.rate
         distance = BlackBox.distance(mdp.sim)
-        𝐱 = vcat(actions, distance, closure_rate)
-        y = BlackBox.isevent(mdp.sim)
-        push!(mdp.dataset, (𝐱, y))
+        push!(TMP_DATA_RATE, closure_rate)
+        push!(TMP_DATA_DISTANCE, distance)
+
+        if BlackBox.isterminal(mdp.sim)
+            𝐱 = [actions, TMP_DATA_DISTANCE, TMP_DATA_RATE]
+            y = BlackBox.isevent(mdp.sim)
+            push!(mdp.dataset, (𝐱, y))
+            TMP_DATA_DISTANCE = []
+            TMP_DATA_RATE = []
+        end
     end
+
+    # # Data collection of {(𝐱=disturbances, y=isevent), ...}
+    # if mdp.params.collect_data && BlackBox.isterminal(mdp.sim)
+    #     closure_rate = mdp.rate
+    #     distance = BlackBox.distance(mdp.sim)
+    #     𝐱 = vcat(actions, distance, closure_rate)
+    #     y = BlackBox.isevent(mdp.sim)
+    #     push!(mdp.dataset, (𝐱, y))
+    # end
 end
 
 
@@ -335,6 +365,7 @@ Return the action trace (i.e., trajectory) with the highest log-likelihood that 
 """
 most_likely_failure(planner) = most_likely_failure(planner.mdp.metrics, planner.mdp.dataset)
 function most_likely_failure(metrics::ASTMetrics, 𝒟)
+    # TODO: get this index from the returned `action_trace` itself
     failure_trace = []
     if any(metrics.event)
         # Failures were found.
@@ -347,7 +378,7 @@ function most_likely_failure(metrics::ASTMetrics, 𝒟)
             end
         end
         most_likely_failure_episode_index = event_indices[argmax(event_logprob)]
-        failure_trace = 𝒟[most_likely_failure_episode_index][1][1:end-2]
+        failure_trace = 𝒟[most_likely_failure_episode_index][1][1:end-2][1]
     end
     return convert(Vector{ASTAction}, failure_trace)
 end
@@ -447,18 +478,20 @@ function playback(mdp::ASTMDP, actions::Vector{ASTAction}, func=nothing; verbose
     BlackBox.initialize!(mdp.sim)
     trace = []
     function trace_and_show(func)
-        single_step = func(mdp.sim)
-        push!(trace, single_step)
-        println(single_step)
+        if !isnothing(func)
+            single_step = func(mdp.sim)
+            push!(trace, single_step)
+            verbose && println(single_step)
+        end
     end
     display_trace::Bool = verbose && !isnothing(func)
-    display_trace ? trace_and_show(func) : nothing
+    trace_and_show(func)
 
     for a in actions
         isnothing(func) && verbose ? println(string(a)) : nothing
         (sp, r) = local_gen(mdp, s, a, rng; record=false)
         s = sp
-        display_trace ? trace_and_show(func) : nothing
+        trace_and_show(func)
     end
 
     if return_trace
@@ -565,6 +598,23 @@ function action_q_trace(s::ASTState)
     end
 
     return actions::Vector, q_value::Float64
+end
+
+
+"""
+Sum up the likelihoods of the entire trajectory.
+"""
+function Distributions.logpdf(action_trace::Vector{ASTAction})
+    return sum([action_trace[t].sample[k].logprob for k in keys(action_trace[1].sample) for t in 1:length(action_trace)])
+end
+
+
+"""
+Sum up the likelihood of the entire trajectory.
+"""
+function sample(action_trace::Vector{ASTAction})
+    # TODO: categorical with weight logprob.
+    rand([action_trace[t].sample[k].sample for k in keys(action_trace[1].sample) for t in 1:length(action_trace)])
 end
 
 

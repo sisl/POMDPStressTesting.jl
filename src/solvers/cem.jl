@@ -16,12 +16,12 @@ end
 
 """
 Planner for the cross-entropy method solver. Takes the `solver::CEMSolver`, the `mdp` problem,
- and fills in the optimized importance sampling distributions `is_dist`.
+ and fills in the optimized importance sampling distributions `policy`.
 """
 mutable struct CEMPlanner{P<:Union{MDP,POMDP}}
     solver::CEMSolver
     mdp::P
-    is_dist::Union{Dict{Symbol,Vector{Sampleable}},Nothing} # optimized importance sample distribution
+    policy::Union{Dict{Symbol,Vector{Sampleable}},Nothing} # optimized importance sample distribution
 end
 
 
@@ -108,13 +108,13 @@ function POMDPs.action(planner::CEMPlanner, s; rng=Random.GLOBAL_RNG)
                                        rng=rng)
 
     # Save the importance sampling distributions
-    planner.is_dist = is_dist_opt
+    planner.policy = is_dist_opt
 
     # Pass back action trace if recording is on (i.e. top_k)
     if mdp.params.top_k > 0
         return get_top_path(mdp)
     else
-        return planner.is_dist # pass back the importance sampling distributions
+        return planner.policy # pass back the importance sampling distributions
     end
 end
 
