@@ -37,3 +37,17 @@ function returns(R; γ=1)
     end
     return G
 end
+
+
+function combine_ast_metrics(plannervec::Vector)
+    return ASTMetrics(
+        miss_distance=vcat(map(planner->planner.mdp.metrics.miss_distance, plannervec)...),
+        rate=vcat(map(planner->planner.mdp.metrics.rate, plannervec)...),
+        logprob=vcat(map(planner->planner.mdp.metrics.logprob, plannervec)...),
+        prob=vcat(map(planner->planner.mdp.metrics.prob, plannervec)...),
+        reward=vcat(map(planner->planner.mdp.metrics.reward, plannervec)...),
+        intermediate_reward=vcat(map(planner->planner.mdp.metrics.intermediate_reward, plannervec)...),
+        returns=vcat(map(planner->planner.mdp.metrics.returns, plannervec)...),
+        event=vcat(map(planner->planner.mdp.metrics.event, plannervec)...),
+        terminal=vcat(map(planner->planner.mdp.metrics.terminal, plannervec)...))
+end

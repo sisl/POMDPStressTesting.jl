@@ -42,18 +42,18 @@ Collect failure metrics including:
 - failure rate
 - highest log-likelihood of failure
 """
-failure_metrics(planner) = failure_metrics(planner.mdp.metrics)
-failure_metrics(mdp::ASTMDP) = failure_metrics(mdp.metrics)
-function failure_metrics(metrics::ASTMetrics)
+failure_metrics(planner; verbose=true) = failure_metrics(planner.mdp.metrics; verbose=verbose)
+failure_metrics(mdp::ASTMDP; verbose=true) = failure_metrics(mdp.metrics; verbose=verbose)
+function failure_metrics(metrics::ASTMetrics; verbose=true)
     E = metrics.event
     terminal_idx = findall(metrics.terminal)
 
     if isempty(terminal_idx)
-        @warn "No terminal states. Something may be incorrect in simulation."
+        verbose && @warn "No terminal states. Something may be incorrect in simulation."
     else
         num_terminals = length(terminal_idx)
         if findfirst(E) === nothing
-            @info "No failures recorded."
+            verbose && @info "No failures recorded."
             return FailureMetrics(num_terminals, NaN, 0, 0, 0)
         else
             possible_failures = metrics.event[terminal_idx] # 0 or 1 if the terminal state was a failure.
@@ -121,7 +121,7 @@ end
 
 function Statistics.mean(fms::Vector{FailureMetrics})
     num_terminals = mean([m.num_terminals for m in fms])
-    first_failure = mean([m.first_failure for m in fms])
+    first_failure = mean(filter(!isnan, [m.first_failure for m in fms]))
     num_failures = mean([m.num_failures for m in fms])
     failure_rate = mean([m.failure_rate for m in fms])
     highest_loglikelihood = mean([m.highest_loglikelihood for m in fms])
@@ -137,7 +137,7 @@ end
 
 function Statistics.std(fms::Vector{FailureMetrics})
     num_terminals = std([m.num_terminals for m in fms])
-    first_failure = std([m.first_failure for m in fms])
+    first_failure = std(filter(!isnan, [m.first_failure for m in fms]))
     num_failures = std([m.num_failures for m in fms])
     failure_rate = std([m.failure_rate for m in fms])
     highest_loglikelihood = std([m.highest_loglikelihood for m in fms])

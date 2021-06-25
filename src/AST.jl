@@ -32,6 +32,7 @@ export
     hash_uint32,
     reset_metrics!,
     most_likely_failure,
+    combine_ast_metrics,
 
     search!,
     playback,
