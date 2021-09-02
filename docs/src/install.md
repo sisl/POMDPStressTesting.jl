@@ -7,7 +7,7 @@ To install the package, run:
 ```
 
 ## Testing
-[![Build Status](https://travis-ci.org/sisl/POMDPStressTesting.jl.svg?branch=master)](https://travis-ci.org/sisl/POMDPStressTesting.jl) [![codecov](https://codecov.io/gh/sisl/POMDPStressTesting.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/sisl/POMDPStressTesting.jl)
+[![Build Status](https://github.com/sisl/POMDPStressTesting.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/sisl/POMDPStressTesting.jl/actions/workflows/CI.yml) [![codecov](https://codecov.io/gh/sisl/POMDPStressTesting.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/sisl/POMDPStressTesting.jl)
 
 
 To run the test suite, open the Julia Pkg mode using `]` and then run:

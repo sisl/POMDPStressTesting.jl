@@ -1,5 +1,5 @@
 # POMDPStressTesting
-[![Build Status](https://travis-ci.org/sisl/POMDPStressTesting.jl.svg?branch=master)](https://travis-ci.org/sisl/POMDPStressTesting.jl) [![codecov](https://codecov.io/gh/sisl/POMDPStressTesting.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/sisl/POMDPStressTesting.jl)
+[![Build Status](https://github.com/sisl/POMDPStressTesting.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/sisl/POMDPStressTesting.jl/actions/workflows/CI.yml) [![codecov](https://codecov.io/gh/sisl/POMDPStressTesting.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/sisl/POMDPStressTesting.jl)
 
 This package is used to find likely failures in a black-box software system.
 The package is integrated with the [POMDPs.jl](https://github.com/JuliaPOMDP/POMDPs.jl) ecosystem; giving access to solvers, policies, and visualizations (although no prior knowledge of the POMDPs.jl package is needed to use POMDPStressTesting.jl—see the [Guide](@ref guide)). It uses a technique called adaptive stress testing (AST)[^1] to find likely failures using a distance metric to a failure event and the likelihood of an environment sample to guide the search.
