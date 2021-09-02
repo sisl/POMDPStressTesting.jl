@@ -1,0 +1,32 @@
+name: Documentation
+
+on:
+  push:
+    branches:
+      - master
+    tags: '*'
+  pull_request:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: julia-actions/setup-julia@latest
+        with:
+          version: '1.6'
+      - name: Install dependencies
+        run: julia --project=docs/ -e 'using Pkg;
+                                       pkg"add https://github.com/JuliaPOMDP/RLInterface.jl";
+                                       pkg"add https://github.com/sisl/POMDPStressTesting.jl";
+                                       pkg"add PyPlot";
+                                       pkg"add Seaborn";
+                                       pkg"instantiate";
+                                       Pkg.develop(PackageSpec(path=pwd()))'
+      - name: Build and deploy
+        env:
+          PYTHON: Conda
+          LD_LIBRARY_PATH: $LD_LIBRARY_PATH:$HOME/.julia/conda/3/lib
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # If authenticating with GitHub Actions token
+          DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }} # If authenticating with SSH deploy key
+        run: julia --project=docs/ docs/make.jl
