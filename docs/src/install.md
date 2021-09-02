@@ -1,11 +1,9 @@
 # Installation
 
-To install the package, first you will need the `RLInterface.jl` package, then you can install `POMDPStressTesting.jl`:
+To install the package, run:
 
 ```julia
-using Pkg
-pkg"add https://github.com/JuliaPOMDP/RLInterface.jl"
-pkg"add https://github.com/sisl/POMDPStressTesting.jl"
+] add https://github.com/sisl/POMDPStressTesting.jl
 ```
 
 ## Testing

@@ -85,7 +85,7 @@ end
 GrayBox.state(sim::Walk1DSim) = [sim.x]
 
 
-function setup_ast(seed=AST.DEFAULT_SEED; solver=MCTSPWSolver)
+function setup_ast(seed=AST.DEFAULT_SEED; solver=TRPOSolver)
     # Create gray-box simulation object
     sim::GrayBox.Simulation = Walk1DSim()
 

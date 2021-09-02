@@ -15,8 +15,6 @@ md"""
 # ╔═╡ 1e00230e-f630-11ea-3e40-bf8c852f78b8
 # begin
 #   using Pkg
-#   pkg"registry add https://github.com/JuliaPOMDP/Registry"
-#   pkg"add https://github.com/sisl/RLInterface.jl"
 #   pkg"add https://github.com/sisl/POMDPStressTesting.jl"
 # end
 md"*Unhide for installation (waiting on Julia registry).*"

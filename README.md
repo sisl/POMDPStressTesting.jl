@@ -87,11 +87,9 @@ An example implementation of the AST interface is provided for the Walk1D proble
 
 # Installation
 
-Install `RLInterface.jl` then the `POMDPStressTesting.jl` package via:
+Install the `POMDPStressTesting.jl` package via:
 ```julia
-using Pkg
-pkg"add https://github.com/JuliaPOMDP/RLInterface.jl"
-pkg"add https://github.com/sisl/POMDPStressTesting.jl"
+] add https://github.com/sisl/POMDPStressTesting.jl
 ```
 
 ### Testing

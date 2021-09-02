@@ -7,7 +7,8 @@ using Zygote
 using POMDPs
 using Random
 using Parameters
-using RLInterface
+using POMDPModelTools
+using CommonRLInterface
 using Distributed
 using Distributions
 using LinearAlgebra
@@ -35,6 +36,17 @@ include(joinpath("utils", "policy_saving.jl"))
 
 include("rollout.jl")
 include("train.jl")
+
+
+"""
+Used by the CommonRLInterface to interact with deep RL solvers.
+"""
+function POMDPs.convert_s(::Type{T}, s::ASTState, mdp::ASTMDP) where T <: AbstractArray
+    if isnothing(s.state)
+        s.state = GrayBox.state(mdp.sim) # [s.hash]
+    end
+    return s.state
+end
 
 
 """

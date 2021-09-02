@@ -42,14 +42,14 @@ end
 mutable struct TRPOPlanner{P<:Union{MDP,POMDP}}
     solver::TRPOSolver
     mdp::P
-    env::Union{MDPEnvironment,POMDPEnvironment}
+    env::Union{MDPCommonRLEnv,POMDPCommonRLEnv}
     policy::Union{CategoricalPolicy,DiagonalGaussianPolicy,Nothing}
 end
 
 
-# Uses RLInterface environment wrapper
-POMDPs.solve(solver::TRPOSolver, mdp::MDP) = TRPOPlanner(set_action_size!(solver, mdp), mdp, MDPEnvironment(mdp), nothing)
-POMDPs.solve(solver::TRPOSolver, mdp::POMDP) = TRPOPlanner(set_action_size!(solver, mdp), mdp, POMDPEnvironment(mdp), nothing)
+# Uses CommonRLInterface environment wrapper
+POMDPs.solve(solver::TRPOSolver, mdp::MDP) = TRPOPlanner(set_action_size!(solver, mdp), mdp, MDPCommonRLEnv(mdp), nothing)
+POMDPs.solve(solver::TRPOSolver, pomdp::POMDP) = TRPOPlanner(set_action_size!(solver, pomdp), pomdp, POMDPCommonRLEnv(pomdp), nothing)
 
 
 # NOTE: action and playback shared between TRPO and PPO (see PolicyOptimization.jl)

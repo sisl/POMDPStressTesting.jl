@@ -4,7 +4,7 @@ Provides implementation of Adaptive Stress Testing (AST) formulation of MDPs/POM
 module AST
 
 using Random
-using RLInterface
+using CommonRLInterface
 using Parameters
 using Distributions
 using DataStructures
@@ -278,16 +278,6 @@ POMDPs.actions(mdp::ASTMDP) = [random_action(mdp)]
 
 import Base.rand
 rand(rng::AbstractRNG, s::ASTState) = s
-
-"""
-Used by the RLInterface to interact with deep RL solvers.
-"""
-function POMDPs.convert_s(::Type{Vector{Float32}}, s::ASTState, mdp::ASTMDP)
-    if isnothing(s.state)
-        s.state = GrayBox.state(mdp.sim) # [s.hash]
-    end
-    return s.state
-end
 
 
 

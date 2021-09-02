@@ -2,16 +2,18 @@
 
 # Returns an episode's worth of experience
 # @everywhere # TODO.
-function run_episode(env::MDPEnvironment, policy::Union{CategoricalPolicy, DiagonalGaussianPolicy}, num_steps::Int)
+function run_episode(env::MDPCommonRLEnv, policy::Union{CategoricalPolicy, DiagonalGaussianPolicy}, num_steps::Int)
     experience = []
-    s = reset!(env)
+    reset!(env)
+    s = observe(env) # observe or env.s?
     for i in 1:num_steps
         a = get_action(policy, s)
-        ast_action = translate_ast_action(env.problem.sim, a, actiontype(env.problem))
-        s′, r, done, _ = step!(env, ast_action)
+        ast_action = translate_ast_action(env.m.sim, a, actiontype(env.m))
+        r = act!(env, ast_action)
+        s′ = observe(env)
         push!(experience, (s,a,r,s′))
         s = s′
-        if done
+        if terminated(env)
             break
         end
     end
