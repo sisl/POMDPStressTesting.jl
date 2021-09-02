@@ -44,21 +44,19 @@ jobs:
             ${{ runner.os }}-${{ matrix.arch }}-
             ${{ runner.os }}-
 
-      # build the depencies, run the tests, and upload coverage results
-      - uses: julia-actions/julia-buildpkg@latest
-        run: julia test/deps.jl
+      # install dependencies
+      - run: julia test/deps.jl
         env:
           PYTHON: Conda
           LD_LIBRARY_PATH: $LD_LIBRARY_PATH:$HOME/.julia/conda/3/lib
           TESTPLOTS: true
+
+      # build the depencies, run the tests, and upload coverage results
+      - uses: julia-actions/julia-buildpkg@latest
       - run: |
           git config --global user.name Tester
           git config --global user.email te@st.er
       - name: Run Tests
-        env:
-          PYTHON: Conda
-          LD_LIBRARY_PATH: $LD_LIBRARY_PATH:$HOME/.julia/conda/3/lib
-          TESTPLOTS: true
         uses: julia-actions/julia-runtest@latest
       - uses: julia-actions/julia-processcoverage@v1
       - uses: codecov/codecov-action@v1
