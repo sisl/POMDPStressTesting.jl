@@ -15,7 +15,7 @@ md"""
 # ╔═╡ 1e00230e-f630-11ea-3e40-bf8c852f78b8
 # begin
 #   using Pkg
-#   pkg"add https://github.com/sisl/POMDPStressTesting.jl"
+#   pkg"add POMDPStressTesting"
 # end
 md"*Unhide for installation (waiting on Julia registry).*"
 

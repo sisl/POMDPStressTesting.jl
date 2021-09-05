@@ -17,7 +17,7 @@ jobs:
           version: '1.6'
       - name: Install dependencies
         run: julia --project=docs/ -e 'using Pkg;
-                                       pkg"add https://github.com/sisl/POMDPStressTesting.jl";
+                                       pkg"add POMDPStressTesting";
                                        pkg"add PyPlot";
                                        pkg"add Seaborn";
                                        pkg"instantiate";

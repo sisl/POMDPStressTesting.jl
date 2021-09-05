@@ -3,7 +3,7 @@
 To install the package, run:
 
 ```julia
-] add https://github.com/sisl/POMDPStressTesting.jl
+] add POMDPStressTesting
 ```
 
 ## Testing
