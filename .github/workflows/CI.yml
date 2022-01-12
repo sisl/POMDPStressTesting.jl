@@ -16,7 +16,6 @@ jobs:
       fail-fast: false
       matrix:
         version:
-          - "1"   # Earliest
           - "1.6" # Latest
         os:
           - windows-latest
