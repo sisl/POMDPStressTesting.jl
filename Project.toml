@@ -1,7 +1,7 @@
 name = "POMDPStressTesting"
 uuid = "6fc570d8-62cd-4d35-b113-bbf3c1b8276a"
 authors = ["Robert Moss <mossr@cs.stanford.edu>"]
-version = "1.0.1"
+version = "1.0.2"
 
 [deps]
 CommonRLInterface = "d842c3ba-07a1-494f-bbec-f5741b0a3e98"

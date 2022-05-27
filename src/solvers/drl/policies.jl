@@ -10,13 +10,13 @@ mutable struct CategoricalPolicy
 end
 
 function CategoricalPolicy(solver)
-    policy_net = Chain(Dense(solver.state_size, solver.hidden_layer_size, relu; initW=_random_normal, initb=constant_init),
-                       Dense(solver.hidden_layer_size, solver.action_size; initW=_random_normal, initb=constant_init),
+    policy_net = Chain(Dense(solver.state_size, solver.hidden_layer_size, relu; init=_random_normal, bias=constant_init(solver.hidden_layer_size)),
+                       Dense(solver.hidden_layer_size, solver.action_size; init=_random_normal, bias=constant_init(solver.action_size)),
                        x -> softmax(x))
 
-    value_net = Chain(Dense(solver.state_size, solver.hidden_layer_size, relu; initW=_random_normal),
-                      Dense(solver.hidden_layer_size, solver.hidden_layer_size, relu; initW=_random_normal),
-                      Dense(solver.hidden_layer_size, 1; initW=_random_normal))
+    value_net = Chain(Dense(solver.state_size, solver.hidden_layer_size, relu; init=_random_normal),
+                      Dense(solver.hidden_layer_size, solver.hidden_layer_size, relu; init=_random_normal),
+                      Dense(solver.hidden_layer_size, 1; init=_random_normal))
 
     return CategoricalPolicy(policy_net, value_net, solver)
 end
@@ -33,14 +33,14 @@ mutable struct DiagonalGaussianPolicy
 end
 
 function DiagonalGaussianPolicy(solver, log_std)
-    μ = Chain(Dense(solver.state_size, solver.hidden_layer_size, tanh; initW=_random_normal, initb=constant_init),
-              Dense(solver.hidden_layer_size, solver.action_size; initW=_random_normal, initb=constant_init),
+    μ = Chain(Dense(solver.state_size, solver.hidden_layer_size, tanh; init=_random_normal, bias=constant_init(solver.hidden_layer_size)),
+              Dense(solver.hidden_layer_size, solver.action_size; init=_random_normal, bias=constant_init(solver.action_size)),
               x->tanh.(x),
               x->solver.output_factor .* x) # TODO. Make this vector of environment STDs (i.e. scale it to [-x, +x] action bound)
 
-    value_net = Chain(Dense(solver.state_size, solver.hidden_layer_size, tanh; initW=_random_normal),
-                      Dense(solver.hidden_layer_size, solver.hidden_layer_size, tanh; initW=_random_normal),
-                      Dense(solver.hidden_layer_size, 1; initW=_random_normal))
+    value_net = Chain(Dense(solver.state_size, solver.hidden_layer_size, tanh; init=_random_normal),
+                      Dense(solver.hidden_layer_size, solver.hidden_layer_size, tanh; init=_random_normal),
+                      Dense(solver.hidden_layer_size, 1; init=_random_normal))
 
     logΣ = ones(solver.action_size) * log_std
 
