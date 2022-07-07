@@ -7,7 +7,7 @@
 
     # Optimization parameters
     η::Float64 = 1e-3 # learning rate η
-    optimizer = ADAM(η) # Optimizer for the value function and policy neural network
+    optimizer = Adam(η) # Optimizer for the value function and policy neural network
 
     # Generalized advantage estimate (GAE) parameters
     gae_γ::Float64 = 0.99 # GAE-Gamma

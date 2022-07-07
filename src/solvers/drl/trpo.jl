@@ -8,7 +8,7 @@
 
     # Optimization parameters
     η::Float64 = 1e-3 # learning rate η
-    optimizer = ADAM(η) # Optimizer for the value function neural network
+    optimizer = Adam(η) # Optimizer for the value function neural network
     δ = 0.01 # KL-divergence constraint
     value_iterations = 5 # Number of iterations to train the value function network
 

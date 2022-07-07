@@ -12,12 +12,12 @@ function Base.hash(A::Vector{ASTAction})
     return h
 end
 
-Base.hash(s::ASTState) = hash(s.t_index, s.parent, s.action)
+Base.hash(s::ASTState, v::UInt=UInt(0)) = hash(s.t_index, s.parent, s.action, v)
 
-function Base.hash(t_index::Int64, parent::Union{Nothing, ASTState}, action::Union{Nothing, ASTAction})
-    h = hash(t_index)
-    h = hash(h, hash(isnothing(parent) ? nothing : parent.hash))
-    h = hash(h, hash(action))
+function Base.hash(t_index::Int64, parent::Union{Nothing, ASTState}, action::Union{Nothing, ASTAction}, v::UInt=UInt(0))
+    h = hash(t_index, v)
+    h = hash((h, hash(isnothing(parent) ? nothing : parent.hash)), v)
+    h = hash((h, hash(action)), v)
     return h
 end
 

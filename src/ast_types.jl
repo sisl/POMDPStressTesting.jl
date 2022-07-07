@@ -65,7 +65,7 @@ end
 State of the AST MDP.
 """
 @with_kw mutable struct ASTState
-    t_index::Int64 = 0 # Confidence check that time corresponds
+    t_index::Int64 = 1 # Confidence check that time corresponds
     parent::Union{Nothing,ASTState} = nothing # Parent state, `nothing` if root
     action::Union{Nothing,ASTAction} = nothing # Action taken from parent
     state::GrayBox.State = nothing # State of the gray-box simulation (not required/available for all problems)
@@ -85,6 +85,8 @@ Debugging metrics.
     miss_distance = Real[]
     rate = Real[]
     logprob = Real[]
+    intermediate_logprob = Real[] # for computing likelihoods of full trajectories at episode termination
+    logprobs = Real[] # log-likelihood of full trajectory
     prob = Real[]
     reward = Real[]
     intermediate_reward = Real[] # for computing returns at episode termination

@@ -21,13 +21,22 @@ Calculate highest log-likelihood of failure.
 """
 highest_loglikelihood_of_failure(planner) = highest_loglikelihood_of_failure(planner.mdp.metrics)
 function highest_loglikelihood_of_failure(metrics::ASTMetrics)
-    # TODO: get this index from the returned `action_trace` itself
-    failure_loglikelihood = NaN
-    if any(metrics.event)
-        # Failures were found.
-        failure_loglikelihood = maximum(metrics.logprob[metrics.event])
+    llmax = -Inf
+    llidx = -1
+    for i in 1:length(metrics.terminal)
+        if metrics.terminal[i]
+            idx = sum(metrics.terminal[1:i])
+            ll = metrics.logprobs[idx]
+            is_event = metrics.event[i]
+            if is_event
+                if ll > llmax
+                    llmax = ll
+                    llidx = idx
+                end
+            end
+        end
     end
-    return failure_loglikelihood
+    return (llmax, llidx)
 end
 
 
@@ -60,7 +69,7 @@ function failure_metrics(metrics::ASTMetrics; verbose=true)
             first_failure = findfirst(possible_failures)
             num_failures = sum(possible_failures)
             failure_rate = num_failures/num_terminals * 100
-            highest_loglikelihood = highest_loglikelihood_of_failure(metrics)
+            highest_loglikelihood, _ = highest_loglikelihood_of_failure(metrics)
             failure_metrics = FailureMetrics(num_terminals, first_failure, num_failures, failure_rate, highest_loglikelihood)
             return failure_metrics
         end
@@ -87,7 +96,7 @@ function print_metrics(metrics::ASTMetrics)
         println("First failure: ", fail_metrics.first_failure, " of ", fail_metrics.num_terminals)
         println("Number of failures: ", fail_metrics.num_failures)
         println("Failure rate: ", round(fail_metrics.failure_rate, digits=5), "%")
-        println("Highest log-likelihood of failure: ", round(fail_metrics.highest_loglikelihood, digits=5))
+        println("Highest likelihood of failure: ", exp(fail_metrics.highest_loglikelihood))
     end
     return fail_metrics
 end

@@ -49,7 +49,7 @@ function get_optimal_path(mdp, tree, snode::Int, actions::Vector{ASTAction}; ver
             get_optimal_path(mdp, tree, snode2, actions, verbose=verbose)
         end
     else
-        AST.go_to_state(mdp, tree.s_labels[snode])
+        AST.go_to_state(mdp, tree.s_labels[snode]; record_last=false)
         if verbose
             if BlackBox.isevent(mdp.sim)
                 println("Event.")

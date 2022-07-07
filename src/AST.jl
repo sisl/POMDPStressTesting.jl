@@ -123,17 +123,6 @@ function local_reward(mdp::ASTMDP, logprob::Real, isevent::Bool, isterminal::Boo
         r += mdp.predict([rate, miss_distance])
     end
 
-    if record_metrics
-        if !mdp.params.episodic_rewards || (mdp.params.episodic_rewards && isterminal) || (mdp.params.episodic_rewards && mdp.params.give_intermediate_reward)
-            record(mdp, prob=exp(logprob), logprob=logprob, miss_distance=miss_distance, reward=r, event=isevent, terminal=isterminal, rate=rate)
-        end
-    end
-
-    if isterminal
-        # end of episode
-        record_returns(mdp)
-    end
-
     return r
 end
 
@@ -225,6 +214,18 @@ function local_gen(mdp::ASTMDP, s::ASTState, a::ASTAction, rng::AbstractRNG=Rand
         record_trace(mdp, action_q_trace(sp)...)
     end
 
+    if record
+        if !mdp.params.episodic_rewards || (mdp.params.episodic_rewards && sp.terminal) || (mdp.params.episodic_rewards && mdp.params.give_intermediate_reward)
+            AST.record(mdp, prob=exp(logprob), logprob=logprob, miss_distance=miss_distance, reward=r, event=isevent, terminal=sp.terminal, rate=rate)
+        end
+    end
+
+    if sp.terminal && record
+        # end of episode
+        record_returns(mdp)
+        record_likelihoods(mdp)
+    end
+
     return (sp=sp, r=r)
 end
 
@@ -284,13 +285,13 @@ rand(rng::AbstractRNG, s::ASTState) = s
 """
 Reset AST simulation to a given state; used by the MCTS DPWSolver as the `reset_callback` function.
 """
-function go_to_state(mdp::ASTMDP, target_state::ASTState; record=true)
+function go_to_state(mdp::ASTMDP, target_state::ASTState; record_last=true)
     s = initialstate(mdp, Random.GLOBAL_RNG)
     BlackBox.initialize!(mdp.sim)
     actions = action_trace(target_state)
     R = 0.0
-    for a in actions
-        s, r = local_gen(mdp, s, a, Random.GLOBAL_RNG; record=record)
+    for (i,a) in enumerate(actions)
+        s, r = local_gen(mdp, s, a, Random.GLOBAL_RNG; record=(record_last && i == length(actions)))
         R += r
     end
     @assert s == target_state
@@ -379,14 +380,14 @@ end
 Rollout simulation for MCTS; used by the MCTS DPWSolver as the `estimate_value` function.
 Custom rollout records action trace once the depth has been reached.
 """
-function rollout(mdp::ASTMDP, s::ASTState, d::Int64)
+function rollout(mdp::ASTMDP, s::ASTState, d::Int64; record::Bool=true)
     if d == 0 || isterminal(mdp, s)
         return 0.0
     else
         a::ASTAction = random_action(mdp)
 
-        (sp, r) = @gen(:sp, :r)(mdp, s, a, Random.GLOBAL_RNG)
-        q_value = r + discount(mdp)*rollout(mdp, sp, d-1)
+        (sp, r) = local_gen(mdp, s, a, Random.GLOBAL_RNG; record=record)
+        q_value = r + discount(mdp)*rollout(mdp, sp, d-1; record=record)
 
         return q_value
     end
@@ -405,7 +406,7 @@ User defined:
 
 `best_callback` Callback function to record best miss distance or reward for later feeding during rollout
 """
-function rollout_end(mdp::ASTMDP, s::ASTState, d::Int64; max_depth=-1, feed_gen=missing, feed_type::Symbol=:none, best_callback::Function=(sm,r)->sm)
+function rollout_end(mdp::ASTMDP, s::ASTState, d::Int64; max_depth=-1, feed_gen=missing, feed_type::Symbol=:none, best_callback::Function=(sm,r)->sm, record::Bool=true)
     sim = mdp.sim
     a::ASTAction = random_action(mdp)
 
@@ -431,7 +432,7 @@ function rollout_end(mdp::ASTMDP, s::ASTState, d::Int64; max_depth=-1, feed_gen=
         sp = ASTState(t_index=mdp.t_index, parent=s, action=a)
         mdp.sim_hash = sp.hash
         sp.terminal = BlackBox.isterminal(sim)
-        r::Float64 = reward(mdp, prob, isevent, sp.terminal, miss_distance, rate)
+        r::Float64 = local_reward(mdp, prob, isevent, sp.terminal, miss_distance, rate; record_metrics=record)
         sp.q_value = r
 
         best_callback(sim, miss_distance) # could use `r` instead
@@ -446,11 +447,11 @@ function rollout_end(mdp::ASTMDP, s::ASTState, d::Int64; max_depth=-1, feed_gen=
         if feed_available && (start_of_rollout_feed || mid_rollout_feed)
             (sp, r) = feed_gen(mdp, s, a, Random.GLOBAL_RNG)
         else
-            (sp, r) = @gen(:sp, :r)(mdp, s, a, Random.GLOBAL_RNG)
+            (sp, r) = local_gen(mdp, s, a, Random.GLOBAL_RNG; record=record)
         end
 
         # Note, pass all keywords.
-        q_value = r + discount(mdp)*rollout_end(mdp, sp, d-1; max_depth=max_depth, feed_gen=feed_gen, feed_type=feed_type, best_callback=best_callback)
+        q_value = r + discount(mdp)*rollout_end(mdp, sp, d-1; max_depth=max_depth, feed_gen=feed_gen, feed_type=feed_type, best_callback=best_callback, record=record)
 
         return q_value
     end
