@@ -28,7 +28,7 @@ This package is intended to help developers stress test their systems before dep
 ## Contents
 ```@contents
 Pages = [
-    "installation.md",
+    "install.md",
     "guide.md",
     "solvers.md",
     "example.md",
